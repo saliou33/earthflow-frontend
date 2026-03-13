@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EarthFlow Frontend
+
+A modern, high-performance geospatial workflow editor inspired by n8n and Excalidraw. 
+
+## Key Features
+
+- **Full-Screen Canvas**: Interactive playground powered by [React Flow](https://reactflow.dev/).
+- **Scalable Node Registry**: Centralized architecture supporting 100+ geospatial node types.
+- **Node Library**: Categorized, collapsible sidebar with drag-and-drop functionality.
+- **Premium UI**: Crafted with [Tailwind CSS v4](https://tailwindcss.com/) and [shadcn/ui](https://ui.shadcn.com/) for a sleek, dark-mode-first experience.
+- **Dynamic Previews**: Integrated map panel for real-time geospatial data visualization (Milestone 4).
+
+## Tech Stack
+
+- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
+- **Styling**: Tailwind CSS v4
+- **State Management**: [TanStack Query (React Query)](https://tanstack.com/query/latest)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Components**: shadcn/ui
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+   ```bash
+   pnpm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. Run the development server:
+   ```bash
+   pnpm dev
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Node Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Nodes are defined in a centralized [registry](src/lib/workflow-registry.ts) and rendered via a generic `BaseNode` component. This ensures visual consistency and makes adding new processing steps as simple as adding a configuration object.
