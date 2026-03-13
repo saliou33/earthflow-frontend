@@ -102,24 +102,27 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
   };
 
   return (
-    <div className="flex flex-col h-full bg-background border-l shadow-2xl">
+    <div className={cn(
+        "flex flex-col h-full shadow-2xl overflow-hidden",
+        isPropertiesExpanded ? "bg-background border-l" : "bg-background/95 backdrop-blur-md rounded-xl border"
+    )}>
       <div className="p-3 border-b flex items-center justify-between bg-muted/30 shrink-0">
         <div className="flex items-center space-x-2">
-          <Settings className="size-3.5 text-muted-foreground" />
+          <Settings className="size-4 text-muted-foreground" />
           <h3 className="font-semibold text-sm">Node Settings</h3>
         </div>
-        <div className="flex items-center -mr-1">
+        <div className="flex items-center gap-0.5">
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="size-7" 
+                className="size-8 rounded-lg" 
                 onClick={() => setIsPropertiesExpanded(!isPropertiesExpanded)}
                 title={isPropertiesExpanded ? "Collapse to Overlay" : "Expand to Sidebar"}
             >
-                {isPropertiesExpanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+                {isPropertiesExpanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
             </Button>
-            <Button variant="ghost" size="icon" className="size-7" onClick={onClose}>
-                <X className="size-3.5" />
+            <Button variant="ghost" size="icon" className="size-8 rounded-lg" onClick={onClose}>
+                <X className="size-4" />
             </Button>
         </div>
       </div>

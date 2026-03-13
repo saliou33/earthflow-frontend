@@ -289,7 +289,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
 
           {/* Expanded Sidebar mode - only visible if isPropertiesOpen AND isPropertiesExpanded */}
           {isPropertiesOpen && selectedNode && isPropertiesExpanded && (
-            <div className="w-80 border-l bg-background shadow-xl z-20 transition-all animate-in slide-in-from-right duration-300 flex flex-col">
+            <div className="w-80 shadow-xl z-20 transition-all animate-in slide-in-from-right duration-300 flex flex-col">
               <NodePropertiesPanel 
                 node={selectedNode} 
                 onClose={() => setIsPropertiesOpen(false)}
@@ -301,7 +301,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
 
       {/* Floating Properties Panel (Overlay mode) */}
       {isPropertiesOpen && selectedNode && !isPropertiesExpanded && (
-        <div className="absolute top-20 right-4 bottom-24 z-10 w-80 bg-background/95 backdrop-blur-md border rounded-xl shadow-lg flex flex-col transition-all duration-300 animate-in fade-in zoom-in-95">
+        <div className="absolute top-20 right-4 bottom-24 z-10 w-80 shadow-lg flex flex-col transition-all duration-300 animate-in fade-in zoom-in-95">
           <NodePropertiesPanel 
             node={selectedNode} 
             onClose={() => setIsPropertiesOpen(false)}
