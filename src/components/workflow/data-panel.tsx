@@ -125,7 +125,7 @@ export function DataPanel() {
       {/* Main Panel Content */}
       <div 
         className={cn(
-          "absolute left-0 right-0 bottom-0 bg-background/95 backdrop-blur-2xl border-t shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.3)] z-40 flex flex-col transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] transform origin-bottom",
+          "absolute left-0 right-0 bottom-0 bg-background/95 backdrop-blur-2xl border-t shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.3)] z-40 flex flex-col transition-all duration-700 ease-in-out transform origin-bottom",
           isDataPanelOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
         )}
         style={{ height: panelHeight }}
@@ -162,7 +162,10 @@ export function DataPanel() {
             <Button variant="ghost" size="icon" className="size-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setIsMaximized(!isMaximized)}>
               {isMaximized ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
             </Button>
-            <Button variant="ghost" size="icon" className="size-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => setIsDataPanelOpen(false)}>
+            <Button variant="ghost" size="icon" className="size-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={() => {
+                setIsDataPanelOpen(false);
+                setIsMaximized(false);
+            }}>
               <ChevronDown className="size-4" />
             </Button>
           </div>
