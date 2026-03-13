@@ -2,7 +2,7 @@ import { LucideIcon, Database, MoveDiagonal, Calculator, LibrarySquare, Maximize
 
 export type NodeCategory = "io" | "geometry" | "analysis";
 
-export type ParameterType = "text" | "number" | "select" | "boolean" | "file" | "range" | "color" | "date"
+export type ParameterType = "text" | "number" | "select" | "boolean" | "file" | "range" | "color" | "date" | "datetime"
   | "datetime-range";
 
 export interface NodeParameter {

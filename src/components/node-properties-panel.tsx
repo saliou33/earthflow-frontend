@@ -44,6 +44,7 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
         case "select":
         case "color":
         case "date":
+        case "datetime":
         case "file":
           fieldSchema = z.string();
           if (param.required) fieldSchema = fieldSchema.min(1, "Required");
@@ -174,7 +175,7 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
                       value={String(value ?? param.default ?? "")}
                       onValueChange={(val) => setValue(param.id, val, { shouldDirty: true })}
                     >
-                      <SelectTrigger id={param.id} className="h-9">
+                      <SelectTrigger id={param.id} className="h-9 w-full">
                         <SelectValue placeholder="Select an option" />
                       </SelectTrigger>
                       <SelectContent>
@@ -247,7 +248,7 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
                     </div>
                   )}
 
-                  {param.type === "date" && (
+                  {(param.type === "date" || param.type === "datetime") && (
                     <DateTimePicker
                       date={value ? new Date(value) : undefined}
                       onChange={(date) => setValue(param.id, date?.toISOString(), { shouldDirty: true })}
@@ -272,7 +273,7 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
 
                   {errors[param.id] && (
                     <p className="text-[10px] text-destructive font-medium">
-                      {errors[param.id]?.message as string}
+                      {String(errors[param.id]?.message ?? "")}
                     </p>
                   )}
                 </div>
