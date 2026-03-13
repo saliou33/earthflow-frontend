@@ -3,24 +3,32 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Save, ArrowLeft, Play, Menu, Maximize, Settings, Map as MapIcon, LibrarySquare, ZoomIn, ZoomOut, Expand } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { 
   ReactFlow, 
-  Background, 
-  useNodesState,
-  useEdgesState,
-  addEdge,
+  Background,
+  BackgroundVariant,
+  Controls,
   Connection,
   Edge,
   Node,
-  ReactFlowInstance
+  ReactFlowInstance,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 // MapLibre and React Map GL imports will be added in Milestone 4
 
+import { useWorkflowStore } from "@/stores/workflow-store";
+import { apiClient } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { BaseNode } from "@/components/nodes/base-node";
+import { NodePropertiesPanel } from "@/components/node-properties-panel";
+import { NODE_REGISTRY, NODE_CATEGORIES } from "@/lib/workflow-registry";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Accordion, 
   AccordionContent, 
@@ -28,16 +36,29 @@ import {
   AccordionTrigger 
 } from "@/components/ui/accordion";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { apiClient } from "@/lib/api";
-import { cn } from "@/lib/utils";
-
-import { BaseNode } from "@/components/nodes/BaseNode";
-import { NODE_REGISTRY, NODE_CATEGORIES } from "@/lib/workflow-registry";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 const nodeTypes = Object.keys(NODE_REGISTRY).reduce((acc, type) => {
   acc[type] = BaseNode;
@@ -57,13 +78,41 @@ type Workflow = {
 
 export function WorkflowEditorClientPage({ workflowId }: { workflowId: string }) {
   const queryClient = useQueryClient();
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [workflowName, setWorkflowName] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const router = useRouter();
+
+  // Zustand Store
+  const {
+    nodes,
+    edges,
+    selectedNodeId,
+    workflowName,
+    isSidebarOpen,
+    isPropertiesOpen,
+    setNodes,
+    setEdges,
+    setWorkflowName,
+    setSelectedNodeId,
+    setIsSidebarOpen,
+    setIsPropertiesOpen,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    updateNodeData,
+    deleteNode,
+    duplicateNode,
+  } = useWorkflowStore();
+
+  // Local UI state
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [newNodeName, setNewNodeName] = useState("");
   const [isMapPanelOpen, setIsMapPanelOpen] = useState(true);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  
+
+  // Derived state to always have the latest node data
+  const selectedNode = useMemo(() => 
+    nodes.find(n => n.id === selectedNodeId) || null
+  , [nodes, selectedNodeId]);
+
   // Ref to track if we've initialized the canvas from data to prevent overwrite loop
   const isInitialized = useRef(false);
 
@@ -82,7 +131,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
       setWorkflowName(workflow.name);
       isInitialized.current = true;
     }
-  }, [workflow, setNodes, setEdges]);
+  }, [workflow, setNodes, setEdges, setWorkflowName]);
 
   const updateWorkflow = useMutation({
     mutationFn: async (data: { name?: string; graph?: any }) => {
@@ -100,10 +149,16 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     },
   });
 
-  const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
+    setIsPropertiesOpen(true);
+  }, [setSelectedNodeId, setIsPropertiesOpen]);
+
+  const onRenameNode = useCallback(() => {
+    if (!selectedNodeId) return;
+    updateNodeData(selectedNodeId, { label: newNodeName });
+    setIsRenameDialogOpen(false);
+  }, [newNodeName, selectedNodeId, updateNodeData]);
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
@@ -120,25 +175,26 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
       event.preventDefault();
 
       const type = event.dataTransfer.getData('application/reactflow');
-      if (typeof type === 'undefined' || !type || !rfInstance) {
-        return;
-      }
+      if (!type || !rfInstance) return;
 
       const position = rfInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
 
+      const definition = NODE_REGISTRY[type];
       const newNode: Node = {
         id: `${type}-${Date.now()}`,
         type,
         position,
-        data: { label: `${type} Node` },
+        data: { 
+            label: definition.label 
+        },
       };
 
-      setNodes((nds) => nds.concat(newNode));
+      setNodes([...nodes, newNode]);
     },
-    [rfInstance, setNodes]
+    [rfInstance, nodes, setNodes]
   );
   
   const handleSave = () => {
@@ -154,7 +210,6 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
   const onZoomIn = useCallback(() => rfInstance?.zoomIn({ duration: 300 }), [rfInstance]);
   const onZoomOut = useCallback(() => rfInstance?.zoomOut({ duration: 300 }), [rfInstance]);
   const onFitView = useCallback(() => rfInstance?.fitView({ duration: 500 }), [rfInstance]);
-  const onNodeClick = useCallback(() => setIsMapPanelOpen(true), []);
 
   if (isLoading) {
     return (
@@ -181,24 +236,96 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
   return (
     <div className="h-screen w-screen overflow-hidden bg-background relative flex">
       {/* Canvas Area (Background) */}
-      <div className="absolute inset-0 z-0">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onInit={setRfInstance}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onNodeClick={onNodeClick}
-          fitView
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background gap={12} size={1} />
-        </ReactFlow>
-      </div>
+        <div className="relative flex-1 bg-background overflow-hidden flex">
+          <div className="flex-1 relative">
+            <ContextMenu>
+                <ContextMenuTrigger className="w-full h-full">
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        onNodesChange={onNodesChange}
+                        onEdgesChange={onEdgesChange}
+                        onConnect={onConnect}
+                        onNodeClick={onNodeClick}
+                        nodeTypes={nodeTypes}
+                        fitView
+                        onInit={setRfInstance}
+                        onDrop={onDrop}
+                        onDragOver={onDragOver}
+                        proOptions={{ hideAttribution: true }}
+                    >
+                    </ReactFlow>
+                </ContextMenuTrigger>
+                <ContextMenuContent className="w-64">
+                    {selectedNode ? (
+                        <>
+                            <ContextMenuLabel>Node: {String(selectedNode.data.label || selectedNode.type)}</ContextMenuLabel>
+                            <ContextMenuItem onClick={() => {
+                                setNewNodeName(String(selectedNode.data.label || ""));
+                                setIsRenameDialogOpen(true);
+                            }}>
+                                Rename
+                            </ContextMenuItem>
+                            <ContextMenuItem onClick={() => onDuplicateNode(selectedNode)}>Duplicate</ContextMenuItem>
+                            <ContextMenuItem onClick={() => setIsPropertiesOpen(true)}>Settings</ContextMenuItem>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem className="text-destructive" onClick={() => deleteNode(selectedNode.id)}>
+                                Delete Node
+                            </ContextMenuItem>
+                        </>
+                    ) : (
+                        <>
+                            <ContextMenuLabel>Canvas Actions</ContextMenuLabel>
+                            <ContextMenuItem onClick={() => setNodes([])}>Clear Canvas</ContextMenuItem>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem onClick={() => rfInstance?.fitView()}>Fit View</ContextMenuItem>
+                        </>
+                    )}
+                </ContextMenuContent>
+            </ContextMenu>
+          </div>
+
+          {/* Properties Panel (Right) */}
+          {isPropertiesOpen && selectedNode && (
+            <div className="w-80 border-l bg-background shadow-xl z-20 transition-all animate-in slide-in-from-right duration-300">
+                <NodePropertiesPanel 
+                    node={selectedNode} 
+                    onClose={() => setIsPropertiesOpen(false)}
+                    onUpdate={updateNodeData}
+                />
+            </div>
+          )}
+        </div>
+
+      {/* Rename Dialog */}
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Rename Node</DialogTitle>
+            <DialogDescription>
+              Enter a new label for this node.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="node-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="node-name"
+                value={newNodeName}
+                onChange={(e) => setNewNodeName(e.target.value)}
+                className="col-span-3"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Cancel</Button>
+            <Button onClick={onRenameNode}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Floating Header */}
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between bg-background/80 backdrop-blur-md border rounded-xl shadow-sm px-4 py-2">
