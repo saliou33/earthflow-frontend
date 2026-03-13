@@ -77,7 +77,7 @@ export function DateTimeRangePicker({
           id="date"
           variant={"outline"}
           className={cn(
-            "w-full justify-start text-left font-normal h-9 overflow-hidden",
+            "w-full justify-start text-left font-normal h-8 overflow-hidden",
             !range && "text-muted-foreground",
             className
           )}

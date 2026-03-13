@@ -18,6 +18,7 @@ interface WorkflowState {
   workflowName: string;
   isSidebarOpen: boolean;
   isPropertiesOpen: boolean;
+  isPropertiesExpanded: boolean;
   
   // Actions
   setNodes: (nodes: Node[]) => void;
@@ -26,6 +27,7 @@ interface WorkflowState {
   setSelectedNodeId: (id: string | null) => void;
   setIsSidebarOpen: (open: boolean) => void;
   setIsPropertiesOpen: (open: boolean) => void;
+  setIsPropertiesExpanded: (expanded: boolean) => void;
   
   // React Flow Handlers
   onNodesChange: OnNodesChange<Node>;
@@ -45,6 +47,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   workflowName: "",
   isSidebarOpen: true,
   isPropertiesOpen: false,
+  isPropertiesExpanded: false,
 
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
@@ -52,6 +55,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   setSelectedNodeId: (selectedNodeId) => set({ selectedNodeId }),
   setIsSidebarOpen: (isSidebarOpen) => set({ isSidebarOpen }),
   setIsPropertiesOpen: (isPropertiesOpen) => set({ isPropertiesOpen }),
+  setIsPropertiesExpanded: (isPropertiesExpanded) => set({ isPropertiesExpanded }),
 
   onNodesChange: (changes) => {
     set({

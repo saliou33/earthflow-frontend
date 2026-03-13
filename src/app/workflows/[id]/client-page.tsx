@@ -88,12 +88,14 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     workflowName,
     isSidebarOpen,
     isPropertiesOpen,
+    isPropertiesExpanded,
     setNodes,
     setEdges,
     setWorkflowName,
     setSelectedNodeId,
     setIsSidebarOpen,
     setIsPropertiesOpen,
+    setIsPropertiesExpanded,
     onNodesChange,
     onEdgesChange,
     onConnect,
@@ -266,7 +268,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                             }}>
                                 Rename
                             </ContextMenuItem>
-                            <ContextMenuItem onClick={() => onDuplicateNode(selectedNode)}>Duplicate</ContextMenuItem>
+                            <ContextMenuItem onClick={() => duplicateNode(selectedNode.id)}>Duplicate</ContextMenuItem>
                             <ContextMenuItem onClick={() => setIsPropertiesOpen(true)}>Settings</ContextMenuItem>
                             <ContextMenuSeparator />
                             <ContextMenuItem className="text-destructive" onClick={() => deleteNode(selectedNode.id)}>
@@ -285,17 +287,28 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
             </ContextMenu>
           </div>
 
-          {/* Properties Panel (Right) */}
-          {isPropertiesOpen && selectedNode && (
-            <div className="w-80 border-l bg-background shadow-xl z-20 transition-all animate-in slide-in-from-right duration-300">
-                <NodePropertiesPanel 
-                    node={selectedNode} 
-                    onClose={() => setIsPropertiesOpen(false)}
-                    onUpdate={updateNodeData}
-                />
+          {/* Expanded Sidebar mode - only visible if isPropertiesOpen AND isPropertiesExpanded */}
+          {isPropertiesOpen && selectedNode && isPropertiesExpanded && (
+            <div className="w-80 border-l bg-background shadow-xl z-20 transition-all animate-in slide-in-from-right duration-300 flex flex-col">
+              <NodePropertiesPanel 
+                node={selectedNode} 
+                onClose={() => setIsPropertiesOpen(false)}
+                onUpdate={updateNodeData}
+              />
             </div>
           )}
         </div>
+
+      {/* Floating Properties Panel (Overlay mode) */}
+      {isPropertiesOpen && selectedNode && !isPropertiesExpanded && (
+        <div className="absolute top-20 right-4 bottom-24 z-10 w-80 bg-background/95 backdrop-blur-md border rounded-xl shadow-lg flex flex-col transition-all duration-300 animate-in fade-in zoom-in-95">
+          <NodePropertiesPanel 
+            node={selectedNode} 
+            onClose={() => setIsPropertiesOpen(false)}
+            onUpdate={updateNodeData}
+          />
+        </div>
+      )}
 
       {/* Rename Dialog */}
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
