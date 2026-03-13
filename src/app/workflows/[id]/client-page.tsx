@@ -357,11 +357,18 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
           >
             <LibrarySquare className="h-4 w-4" />
           </Button>
-          <Input 
-            value={workflowName}
-            onChange={(e) => setWorkflowName(e.target.value)}
-            className="max-w-[300px] border-transparent hover:border-border focus:border-border shadow-none text-base font-semibold focus-visible:ring-0 px-2 h-8 bg-transparent transition-colors"
-          />
+          <div className="relative flex items-center group max-w-[400px] min-w-[120px]">
+             {/* Invisible span to measure content width */}
+            <span className="invisible whitespace-pre px-2 text-base font-semibold h-8 flex items-center">
+              {workflowName || "Untitled Workflow"}
+            </span>
+            <Input 
+              value={workflowName}
+              onChange={(e) => setWorkflowName(e.target.value)}
+              placeholder="Untitled Workflow"
+              className="absolute inset-0 w-full border-transparent hover:border-border focus:border-border shadow-none text-base font-semibold focus-visible:ring-0 px-2 h-8 bg-transparent transition-colors rounded-lg overflow-hidden flex items-center"
+            />
+          </div>
         </div>
         
         <div className="flex items-center space-x-2">
