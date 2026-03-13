@@ -55,20 +55,22 @@ export function DataPanel() {
     enabled: !!asset?.id,
   });
 
-  // Auto-select node if results arrive and none selected
+  const lastAutoSelectExecution = useRef<string | null>(null);
+
+  // Auto-select node ONLY when a new execution completes
   useEffect(() => {
-    if (executionResults && Object.keys(executionResults).length > 0) {
-      if (!selectedNodeId || !executionResults[selectedNodeId]) {
-        // Find the "last" node that has an output
-        // For now, just the first available in the results map
-        const nodeIds = Object.keys(executionResults);
-        const lastNodeId = nodeIds[nodeIds.length - 1];
-        if (lastNodeId) {
-          useWorkflowStore.getState().setSelectedNodeId(lastNodeId);
-        }
+    if (executionResults && lastExecutionAt && lastExecutionAt !== lastAutoSelectExecution.current) {
+      lastAutoSelectExecution.current = lastExecutionAt;
+      
+      const nodeIds = Object.keys(executionResults);
+      const lastNodeId = nodeIds[nodeIds.length - 1];
+      if (lastNodeId) {
+        useWorkflowStore.getState().setSelectedNodeId(lastNodeId);
+        // Explicitly open data panel if results arrived
+        setIsDataPanelOpen(true);
       }
     }
-  }, [executionResults, selectedNodeId]);
+  }, [executionResults, lastExecutionAt, setIsDataPanelOpen]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     isResizing.current = true;
