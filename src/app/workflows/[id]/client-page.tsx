@@ -366,7 +366,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
               value={workflowName}
               onChange={(e) => setWorkflowName(e.target.value)}
               placeholder="Untitled Workflow"
-              className="absolute inset-0 w-full border-transparent hover:border-border focus:border-border shadow-none text-base font-semibold focus-visible:ring-0 px-2 h-8 bg-transparent transition-colors rounded-lg overflow-hidden flex items-center"
+              className="absolute inset-0 w-full border-transparent hover:border-border focus:border-border shadow-none text-base text-center font-semibold focus-visible:ring-0 px-2 h-8 bg-transparent transition-colors rounded-lg overflow-hidden flex items-center"
             />
           </div>
         </div>
