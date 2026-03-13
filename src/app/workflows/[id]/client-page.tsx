@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Save, ArrowLeft, Play, Menu, Maximize, Settings, Map as MapIcon, LibrarySquare, ZoomIn, ZoomOut, Expand } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand } from "lucide-react";
 import Link from "next/link";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -24,7 +24,9 @@ import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { BaseNode } from "@/components/nodes/base-node";
 import { NodePropertiesPanel } from "@/components/node-properties-panel";
+import { DataPanel } from "@/components/data-panel";
 import { NODE_REGISTRY, NODE_CATEGORIES } from "@/lib/workflow-registry";
+import { DEMO_WORKFLOW_ID, DEMO_WORKFLOW_DATA } from "@/lib/demo-data";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,12 +104,16 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     updateNodeData,
     deleteNode,
     duplicateNode,
+    executionResults,
+    setExecutionResults,
+    setLastExecutionAt,
+    setIsDataPanelOpen,
   } = useWorkflowStore();
 
   // Local UI state
+  const [isExecuting, setIsExecuting] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [newNodeName, setNewNodeName] = useState("");
-  const [isMapPanelOpen, setIsMapPanelOpen] = useState(true);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
 
   // Derived state to always have the latest node data
@@ -128,12 +134,35 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
 
   useEffect(() => {
     if (workflow && !isInitialized.current) {
-      setNodes(workflow.graph.nodes || []);
-      setEdges(workflow.graph.edges || []);
-      setWorkflowName(workflow.name);
+      if (workflowId === DEMO_WORKFLOW_ID) {
+        setNodes(DEMO_WORKFLOW_DATA.graph.nodes);
+        setEdges(DEMO_WORKFLOW_DATA.graph.edges);
+        setWorkflowName(DEMO_WORKFLOW_DATA.name);
+      } else {
+        setNodes(workflow.graph.nodes || []);
+        setEdges(workflow.graph.edges || []);
+        setWorkflowName(workflow.name);
+      }
       isInitialized.current = true;
     }
-  }, [workflow, setNodes, setEdges, setWorkflowName]);
+  }, [workflow, workflowId, setNodes, setEdges, setWorkflowName]);
+
+  // Fetch latest execution on load
+  const { data: latestExecution } = useQuery({
+    queryKey: ["workflows", workflowId, "executions", "latest"],
+    queryFn: async () => {
+      const res = await apiClient.get(`v1/workflows/${workflowId}/executions/latest`);
+      return res.data;
+    },
+    enabled: !!workflowId,
+  });
+
+  useEffect(() => {
+    if (latestExecution?.results) {
+       setExecutionResults(latestExecution.results);
+       setLastExecutionAt(latestExecution.created_at);
+    }
+  }, [latestExecution, setExecutionResults, setLastExecutionAt]);
 
   const updateWorkflow = useMutation({
     mutationFn: async (data: { name?: string; graph?: any }) => {
@@ -150,6 +179,39 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
       console.error(error);
     },
   });
+
+  const onExecute = async (nodeId?: string) => {
+    setIsExecuting(true);
+    try {
+      // 1. Save current graph first
+      await apiClient.put(`v1/workflows/${workflowId}`, {
+        name: workflowName,
+        graph: { nodes, edges }
+      });
+
+      // 2. Trigger execution (optionally partial)
+      const response = await apiClient.post(`v1/workflows/${workflowId}/execute`, {
+        node_id: nodeId
+      });
+
+      if (response.status !== 200) {
+        throw new Error(response.data || "Execution failed");
+      }
+
+      const results = response.data;
+      setExecutionResults(results);
+      setLastExecutionAt(new Date().toISOString());
+      setIsDataPanelOpen(true);
+      
+      console.log("Execution successful:", results);
+      toast.success(nodeId ? `Node execution successful` : "Workflow executed successfully!");
+    } catch (error: any) {
+      toast.error("Execution failed: " + (error.message || "Unknown error"));
+      console.error("Execution failed:", error);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNodeId(node.id);
@@ -249,6 +311,17 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
                         onNodeClick={onNodeClick}
+                        onNodeContextMenu={(event, node) => {
+                            setSelectedNodeId(node.id);
+                        }}
+                        onPaneContextMenu={(event) => {
+                            setSelectedNodeId(null);
+                            setIsPropertiesOpen(false);
+                        }}
+                        onPaneClick={() => {
+                            setSelectedNodeId(null);
+                            setIsPropertiesOpen(false);
+                        }}
                         nodeTypes={nodeTypes}
                         fitView
                         onInit={setRfInstance}
@@ -262,6 +335,10 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                     {selectedNode ? (
                         <>
                             <ContextMenuLabel>Node: {String(selectedNode.data.label || selectedNode.type)}</ContextMenuLabel>
+                            <ContextMenuItem onClick={() => onExecute(selectedNode.id)}>
+                                <Play className="mr-2 h-4 w-4 text-green-500" />
+                                Run this Node
+                            </ContextMenuItem>
                             <ContextMenuItem onClick={() => {
                                 setNewNodeName(String(selectedNode.data.label || ""));
                                 setIsRenameDialogOpen(true);
@@ -410,18 +487,24 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
             )}
             Save
           </Button>
-          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white h-8">
-            <Play className="mr-2 h-4 w-4" />
-            Execute
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="bg-green-600 hover:bg-green-700 h-8 font-bold"
+            onClick={() => onExecute()}
+            disabled={isExecuting}
+          >
+            <Play className={cn("h-3.5 w-3.5 mr-2", isExecuting && "animate-spin")} />
+            {isExecuting ? "Executing..." : "Execute"}
           </Button>
           <div className="h-6 w-px bg-border mx-2" />
           <Button 
             variant="ghost" 
             size="icon" 
             className="shrink-0 h-8 w-8 hover:bg-muted text-muted-foreground"
-            onClick={() => setIsMapPanelOpen(!isMapPanelOpen)}
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           >
-            <MapIcon className="h-4 w-4" />
+            <LibrarySquare className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -486,27 +569,8 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
         </div>
       </div>
 
-      {/* Right Sidebar (Map Preview) - Floating overlay */}
-      <div 
-        className={`absolute top-20 right-4 bottom-24 z-10 w-96 bg-background/95 backdrop-blur-md border rounded-xl shadow-lg flex flex-col transition-all duration-300 ease-in-out ${
-          isMapPanelOpen ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="p-3 border-b flex items-center justify-between">
-            <span className="font-medium text-sm flex items-center">
-                <MapIcon className="mr-2 h-4 w-4 text-primary" /> Map Preview
-            </span>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsMapPanelOpen(false)}>
-                <Maximize className="h-3 w-3" />
-            </Button>
-        </div>
-        <div className="flex-1 relative flex items-center justify-center bg-muted/30 m-2 rounded-lg border border-dashed">
-          <p className="text-muted-foreground text-sm flex flex-col items-center">
-            <MapIcon className="h-8 w-8 mb-2 opacity-30" />
-            Map viewport placeholder
-          </p>
-        </div>
-      </div>
+      {/* Data Results Panel */}
+      <DataPanel />
     </div>
   );
 }

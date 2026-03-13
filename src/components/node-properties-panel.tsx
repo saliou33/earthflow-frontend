@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { DateTimeRangePicker } from "@/components/ui/date-time-range-picker";
+import { AutocompleteHelper } from "@/components/autocomplete-helper";
 import { cn } from "@/lib/utils";
 
 interface NodePropertiesPanelProps {
@@ -85,8 +86,8 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
     setValue,
     formState: { errors, isDirty },
   } = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: node.data,
+    resolver: zodResolver(schema as any),
+    defaultValues: node.data as any,
   });
 
   // Sync form when node changes (e.g. user selects a different node)
@@ -168,12 +169,20 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
                   </div>
 
                   {param.type === "text" && (
-                    <Input
-                      id={param.id}
-                      {...register(param.id)}
-                      placeholder={param.placeholder}
-                      className={cn("h-8 text-sm", errors[param.id] && "border-destructive")}
-                    />
+                    <AutocompleteHelper 
+                      onSelect={(suggestion) => {
+                        const current = watch(param.id) || "";
+                        setValue(param.id, current + suggestion, { shouldDirty: true });
+                      }}
+                      context={param.id === "expression" ? "expression" : "text"}
+                    >
+                      <Input
+                        id={param.id}
+                        {...register(param.id)}
+                        placeholder={param.placeholder}
+                        className={cn("h-8 text-sm", errors[param.id] && "border-destructive")}
+                      />
+                    </AutocompleteHelper>
                   )}
 
                   {param.type === "number" && (
@@ -269,7 +278,7 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
 
                   {(param.type === "date" || param.type === "datetime") && (
                     <DateTimePicker
-                      date={value ? new Date(value) : undefined}
+                      date={value ? new Date(value as string) : undefined}
                       onChange={(date) => setValue(param.id, date?.toISOString(), { shouldDirty: true })}
                       placeholder={param.placeholder}
                       className="h-8 text-sm"
@@ -280,8 +289,8 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
                   {param.type === "datetime-range" && (
                     <DateTimeRangePicker
                       range={value ? { 
-                        start: new Date(value.start), 
-                        end: new Date(value.end) 
+                        start: new Date((value as any).start), 
+                        end: new Date((value as any).end) 
                       } : undefined}
                       onChange={(range) => setValue(param.id, range ? {
                         start: range.start.toISOString(),

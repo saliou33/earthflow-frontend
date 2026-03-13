@@ -147,4 +147,63 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
       }
     ],
   },
+  variable: {
+    type: "variable",
+    label: "Variable",
+    description: "A dynamic variable or constant",
+    category: "io",
+    icon: Database,
+    color: "blue",
+    outputs: 1,
+    parameters: [
+      {
+        id: "label",
+        label: "Variable Name",
+        type: "text",
+        placeholder: "e.g. a",
+        required: true,
+      },
+      {
+        id: "inputType",
+        label: "Type",
+        type: "select",
+        default: "float",
+        options: [
+          { label: "Number (Float)", value: "float" },
+          { label: "Integer", value: "int" },
+          { label: "Text", value: "string" },
+          { label: "Boolean", value: "bool" },
+          { label: "Date", value: "date" },
+          { label: "File/Asset", value: "file" },
+        ],
+        required: true,
+      },
+      {
+        id: "value",
+        label: "Value",
+        type: "text",
+        placeholder: "Enter value...",
+        required: true,
+      }
+    ]
+  },
+  expression: {
+    type: "expression",
+    label: "Expression",
+    description: "Dynamic Rhai expression",
+    category: "analysis",
+    icon: Calculator,
+    color: "purple",
+    inputs: 1,
+    outputs: 1,
+    parameters: [
+      {
+        id: "expression",
+        label: "Formula",
+        type: "text",
+        placeholder: "e.g. a + b * 2",
+        required: true,
+      }
+    ]
+  },
 };

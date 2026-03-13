@@ -20,6 +20,12 @@ interface WorkflowState {
   isPropertiesOpen: boolean;
   isPropertiesExpanded: boolean;
   
+  // Execution & UI Panels
+  executionResults: Record<string, any> | null;
+  lastExecutionAt: string | null;
+  isDataPanelOpen: boolean;
+  dataPanelHeight: number;
+  
   // Actions
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
@@ -28,6 +34,10 @@ interface WorkflowState {
   setIsSidebarOpen: (open: boolean) => void;
   setIsPropertiesOpen: (open: boolean) => void;
   setIsPropertiesExpanded: (expanded: boolean) => void;
+  setExecutionResults: (results: Record<string, any> | null) => void;
+  setIsDataPanelOpen: (open: boolean) => void;
+  setDataPanelHeight: (height: number) => void;
+  setLastExecutionAt: (at: string | null) => void;
   
   // React Flow Handlers
   onNodesChange: OnNodesChange<Node>;
@@ -48,6 +58,10 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   isSidebarOpen: true,
   isPropertiesOpen: false,
   isPropertiesExpanded: false,
+  executionResults: null,
+  lastExecutionAt: null,
+  isDataPanelOpen: false,
+  dataPanelHeight: 300,
 
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
@@ -56,6 +70,10 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   setIsSidebarOpen: (isSidebarOpen) => set({ isSidebarOpen }),
   setIsPropertiesOpen: (isPropertiesOpen) => set({ isPropertiesOpen }),
   setIsPropertiesExpanded: (isPropertiesExpanded) => set({ isPropertiesExpanded }),
+  setExecutionResults: (executionResults) => set({ executionResults }),
+  setIsDataPanelOpen: (isDataPanelOpen) => set({ isDataPanelOpen }),
+  setDataPanelHeight: (dataPanelHeight) => set({ dataPanelHeight }),
+  setLastExecutionAt: (lastExecutionAt) => set({ lastExecutionAt }),
 
   onNodesChange: (changes) => {
     set({
