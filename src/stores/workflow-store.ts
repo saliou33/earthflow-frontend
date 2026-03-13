@@ -76,9 +76,24 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   setLastExecutionAt: (lastExecutionAt) => set({ lastExecutionAt }),
 
   onNodesChange: (changes) => {
-    set({
-      nodes: applyNodeChanges(changes, get().nodes),
-    });
+    const nextNodes = applyNodeChanges(changes, get().nodes);
+    
+    // React Flow's applyNodeChanges only handles node state. 
+    // We need to manually clean up edges if nodes are removed (e.g. via Delete key)
+    const removedNodeIds = changes
+      .filter((c) => c.type === "remove")
+      .map((c: any) => c.id);
+
+    if (removedNodeIds.length > 0) {
+      set({
+        nodes: nextNodes,
+        edges: get().edges.filter(
+          (edge) => !removedNodeIds.includes(edge.source) && !removedNodeIds.includes(edge.target)
+        ),
+      });
+    } else {
+      set({ nodes: nextNodes });
+    }
   },
 
   onEdgesChange: (changes) => {

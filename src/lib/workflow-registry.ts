@@ -3,7 +3,7 @@ import { LucideIcon, Database, MoveDiagonal, Calculator, LibrarySquare, Maximize
 export type NodeCategory = "io" | "geometry" | "analysis";
 
 export type ParameterType = "text" | "number" | "select" | "boolean" | "file" | "range" | "color" | "date" | "datetime"
-  | "datetime-range";
+  | "datetime-range" | "asset";
 
 export interface NodeParameter {
   id: string;
@@ -66,6 +66,24 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
         type: "text",
         placeholder: "YYYY-MM-DD to YYYY-MM-DD",
         description: "Filter data by acquisition date",
+      }
+    ]
+  },
+  "vector_input": {
+    type: "vector_input",
+    label: "Vector Asset",
+    description: "Load a vector dataset from the Asset Manager",
+    category: "io",
+    icon: Database,
+    color: "blue",
+    outputs: 1,
+    parameters: [
+      {
+        id: "assetId",
+        label: "Selected Asset",
+        type: "asset",
+        description: "Choose an asset from your Data Lakehouse",
+        required: true,
       }
     ]
   },

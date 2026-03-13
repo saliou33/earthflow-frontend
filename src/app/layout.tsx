@@ -1,6 +1,6 @@
 import { authClient } from "@/lib/auth-client";
-import { ThemeProvider } from "@/components/theme-provider";
-import { QueryProvider } from "@/components/query-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { QueryProvider } from "@/providers/query-provider";
 import "@/app/globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Geist } from "next/font/google";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand, Database } from "lucide-react";
 import Link from "next/link";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -23,8 +23,9 @@ import { useWorkflowStore } from "@/stores/workflow-store";
 import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { BaseNode } from "@/components/nodes/base-node";
-import { NodePropertiesPanel } from "@/components/node-properties-panel";
-import { DataPanel } from "@/components/data-panel";
+import { NodePropertiesPanel } from "@/components/workflow/node-properties-panel";
+import { DataPanel } from "@/components/workflow/data-panel";
+import { AssetManagerModal } from "@/components/workflow/asset-manager-modal";
 import { NODE_REGISTRY, NODE_CATEGORIES } from "@/lib/workflow-registry";
 import { DEMO_WORKFLOW_ID, DEMO_WORKFLOW_DATA } from "@/lib/demo-data";
 
@@ -113,6 +114,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
   // Local UI state
   const [isExecuting, setIsExecuting] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [newNodeName, setNewNodeName] = useState("");
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
 
@@ -434,6 +436,14 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
           >
             <LibrarySquare className="h-4 w-4" />
           </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="shrink-0 h-8 w-8 hover:bg-muted text-muted-foreground mr-2"
+            onClick={() => setIsAssetModalOpen(true)}
+          >
+            <Database className="h-4 w-4" />
+          </Button>
           <div className="relative flex items-center group max-w-[400px] min-w-[120px]">
              {/* Invisible span to measure content width */}
             <span className="invisible whitespace-pre px-2 text-base font-semibold h-8 flex items-center">
@@ -556,9 +566,11 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                             "text-purple-500"
                           )} />
                         </div>
-                        <div>
-                          <div className="text-sm font-medium">{node.label}</div>
-                          <div className="text-[10px] text-muted-foreground">{node.description}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold truncate">{node.label}</div>
+                          <div className="text-[10px] text-muted-foreground line-clamp-2 leading-tight h-[24px]">
+                            {node.description}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -571,6 +583,9 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
 
       {/* Data Results Panel */}
       <DataPanel />
+
+      {/* Asset Manager Modal */}
+      <AssetManagerModal open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen} />
     </div>
   );
 }

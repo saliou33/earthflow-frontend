@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { X, Settings, Info, Maximize2, Minimize2 } from "lucide-react";
@@ -23,7 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { DateTimeRangePicker } from "@/components/ui/date-time-range-picker";
-import { AutocompleteHelper } from "@/components/autocomplete-helper";
+import { AutocompleteHelper } from "@/components/workflow/autocomplete-helper";
 import { cn } from "@/lib/utils";
 
 interface NodePropertiesPanelProps {
@@ -49,6 +51,7 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
         case "date":
         case "datetime":
         case "file":
+        case "asset":
           fieldSchema = z.string();
           if (param.required) fieldSchema = fieldSchema.min(1, "Required");
           break;
@@ -88,6 +91,16 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
   } = useForm({
     resolver: zodResolver(schema as any),
     defaultValues: node.data as any,
+  });
+
+  const { data: assets = [] } = useQuery({
+    queryKey: ["assets"],
+    queryFn: async () => {
+      const res = await apiClient.get("v1/assets");
+      return res.data;
+    },
+    // Only fetch if there is at least one asset parameter
+    enabled: !!definition?.parameters?.some(p => p.type === "asset"),
   });
 
   // Sync form when node changes (e.g. user selects a different node)
@@ -299,6 +312,27 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
                       placeholder={param.placeholder}
                       className="h-8 text-xs"
                     />
+                  )}
+
+                  {param.type === "asset" && (
+                    <Select
+                      value={String(value ?? param.default ?? "")}
+                      onValueChange={(val) => setValue(param.id, val, { shouldDirty: true })}
+                    >
+                      <SelectTrigger id={param.id} className="h-8 w-full text-sm">
+                        <SelectValue placeholder="Select an asset" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {assets.map((asset: any) => (
+                          <SelectItem key={asset.id} value={asset.id}>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] bg-primary/10 text-primary px-1 rounded uppercase font-bold">{asset.asset_type}</span>
+                                <span>{asset.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
 
                   {errors[param.id] && (
