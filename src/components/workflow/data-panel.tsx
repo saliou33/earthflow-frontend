@@ -247,24 +247,24 @@ export function DataPanel() {
                           )}
                       </div>
                       
-                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {activeTab === "console" && (
-                            nodeOutput ? (
+                      <div className="relative min-h-[500px]">
+                        <div className={cn("animate-in fade-in slide-in-from-bottom-4 duration-500", activeTab !== "console" && "hidden")}>
+                            {nodeOutput ? (
                                 <pre className="p-6 rounded-2xl bg-muted/40 border border-primary/5 font-mono text-[11px] leading-relaxed overflow-auto max-h-[600px] shadow-2xl backdrop-blur-sm">
                                     {JSON.stringify(nodeOutput, null, 2)}
                                 </pre>
                             ) : (
                                 <EmptyState message="No output payload detected" />
-                            )
-                        )}
+                            )}
+                        </div>
 
-                        {activeTab === "table" && (
+                        <div className={cn("animate-in fade-in slide-in-from-bottom-4 duration-500", activeTab !== "table" && "hidden")}>
                             <DataTablePreview asset={asset} presignedUrl={presignedData?.url} output={nodeOutput} />
-                        )}
+                        </div>
 
-                        {activeTab === "map" && (
+                        <div className={cn("animate-in fade-in slide-in-from-bottom-4 duration-500", activeTab !== "map" && "hidden")}>
                             <SpatialMapPreview asset={asset} presignedUrl={presignedData?.url} />
-                        )}
+                        </div>
                       </div>
                   </div>
               ) : (

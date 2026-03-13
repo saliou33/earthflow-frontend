@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Database, Maximize2, Minimize2, Terminal, Download, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ interface DataTablePreviewProps {
   output?: any;
 }
 
-export function DataTablePreview({ asset, presignedUrl, output }: DataTablePreviewProps) {
+export const DataTablePreview = memo(function DataTablePreview({ asset, presignedUrl, output }: DataTablePreviewProps) {
     const [previewData, setPreviewData] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isMaximized, setIsMaximized] = useState(false);
@@ -132,4 +132,4 @@ export function DataTablePreview({ asset, presignedUrl, output }: DataTablePrevi
             )}
         </div>
     );
-}
+});

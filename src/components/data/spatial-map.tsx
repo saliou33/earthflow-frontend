@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import Map, { Source, Layer, NavigationControl, FullscreenControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Maximize2, Minimize2, Layers, Palette, Info, Map as MapIcon, MousePointer2 } from "lucide-react";
@@ -26,7 +26,7 @@ const MAP_STYLES = [
   { id: "voyager", label: "Voyager", url: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json" },
 ];
 
-export function SpatialMapPreview({ asset, presignedUrl }: SpatialMapPreviewProps) {
+export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presignedUrl }: SpatialMapPreviewProps) {
     const [geoJson, setGeoJson] = useState<any>(null);
     const [isMaximized, setIsMaximized] = useState(false);
     const [mapStyle, setMapStyle] = useState(MAP_STYLES[0].url);
@@ -228,4 +228,4 @@ export function SpatialMapPreview({ asset, presignedUrl }: SpatialMapPreviewProp
 
         </div>
     );
-}
+});
