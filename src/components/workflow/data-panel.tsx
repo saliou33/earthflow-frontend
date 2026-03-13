@@ -55,6 +55,21 @@ export function DataPanel() {
     enabled: !!asset?.id,
   });
 
+  // Auto-select node if results arrive and none selected
+  useEffect(() => {
+    if (executionResults && Object.keys(executionResults).length > 0) {
+      if (!selectedNodeId || !executionResults[selectedNodeId]) {
+        // Find the "last" node that has an output
+        // For now, just the first available in the results map
+        const nodeIds = Object.keys(executionResults);
+        const lastNodeId = nodeIds[nodeIds.length - 1];
+        if (lastNodeId) {
+          useWorkflowStore.getState().setSelectedNodeId(lastNodeId);
+        }
+      }
+    }
+  }, [executionResults, selectedNodeId]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     isResizing.current = true;
     lastY.current = e.clientY;
@@ -82,7 +97,7 @@ export function DataPanel() {
     };
   }, [dataPanelHeight, setDataPanelHeight]);
 
-  const panelHeight = isMaximized ? "100vh" : `${dataPanelHeight}px`;
+  const panelHeight = isMaximized ? "100vh" : (isDataPanelOpen ? `${dataPanelHeight}px` : "0px");
 
   return (
     <>
@@ -108,10 +123,10 @@ export function DataPanel() {
       {/* Main Panel Content */}
       <div 
         className={cn(
-          "absolute left-0 right-0 bottom-0 bg-background/95 backdrop-blur-2xl border-t shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.3)] z-40 flex flex-col transition-all duration-500 ease-in-out transform origin-bottom",
-          isMaximized ? "top-0 h-full" : (isDataPanelOpen ? "translate-y-0" : "translate-y-full")
+          "absolute left-0 right-0 bottom-0 bg-background/95 backdrop-blur-2xl border-t shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.3)] z-40 flex flex-col transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] transform origin-bottom",
+          isDataPanelOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
         )}
-        style={{ height: isMaximized ? '100vh' : panelHeight }}
+        style={{ height: panelHeight }}
       >
         {/* Resize Handle */}
         {!isMaximized && (
