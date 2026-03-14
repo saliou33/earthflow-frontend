@@ -98,8 +98,8 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
     resolver: zodResolver(schema as any),
     defaultValues: {
       ...node.data,
-      label: node.data.label ?? definition.label,
-      description: node.data.description ?? definition.description,
+      label: node.data.label || "", // Don't eagerly fallback to definition.label, let it be dynamically resolved
+      description: node.data.description || "",
     } as any,
   });
 
@@ -117,8 +117,8 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
   useEffect(() => {
     reset({
       ...node.data,
-      label: node.data.label ?? definition.label,
-      description: node.data.description ?? definition.description,
+      label: node.data.label || "",
+      description: node.data.description || "",
     });
   }, [node.id, reset, node.data, definition]);
 
@@ -341,7 +341,7 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
                <Input 
                   id="node-label"
                   {...register("label")}
-                  placeholder="e.g. Primary Source"
+                  placeholder={definition.label}
                   className="h-8 text-sm font-bold border-primary/20 bg-primary/5 focus-visible:ring-primary/30"
                />
             </div>
