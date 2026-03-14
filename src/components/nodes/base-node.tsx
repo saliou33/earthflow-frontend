@@ -71,13 +71,13 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
       <div className={cn("p-2 flex items-center justify-between border-b border-current/20 rounded-t-[10px]", colorClass)}>
         <div className="flex items-center space-x-2">
           <Icon className="h-4 w-4" />
-          <span className="font-semibold text-sm">{definition.label}</span>
+          <span className="font-semibold text-sm">{data.label || definition.label}</span>
         </div>
       </div>
 
-      <div className="p-4 flex flex-col items-center justify-center">
-        <span className="text-muted-foreground text-xs font-medium text-center">
-          {data.label || definition.description}
+      <div className="p-4 flex flex-col items-center justify-center min-h-[60px]">
+        <span className="text-muted-foreground text-[10px] font-medium text-center line-clamp-2">
+          {data.description || definition.description}
         </span>
       </div>
 

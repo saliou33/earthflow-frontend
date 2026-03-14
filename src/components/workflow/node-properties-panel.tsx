@@ -26,6 +26,8 @@ import { Separator } from "@/components/ui/separator";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { DateTimeRangePicker } from "@/components/ui/date-time-range-picker";
 import { AutocompleteHelper } from "@/components/workflow/autocomplete-helper";
+import { MapInput } from "@/components/workflow/map-input";
+import { AssetSelector } from "@/components/workflow/asset-selector";
 import { cn } from "@/lib/utils";
 
 interface NodePropertiesPanelProps {
@@ -40,7 +42,10 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
 
   // Generate Zod schema dynamically based on definition parameters
   const schema = useMemo(() => {
-    const shape: Record<string, any> = {};
+    const shape: Record<string, any> = {
+      label: z.string().min(1, "Label is required"),
+      description: z.string().optional(),
+    };
     definition?.parameters?.forEach((param) => {
       let fieldSchema: any;
       
@@ -90,23 +95,21 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(schema as any),
-    defaultValues: node.data as any,
-  });
-
-  const { data: assets = [] } = useQuery({
-    queryKey: ["assets"],
-    queryFn: async () => {
-      const res = await apiClient.get("v1/assets");
-      return res.data;
-    },
-    // Only fetch if there is at least one asset parameter
-    enabled: !!definition?.parameters?.some(p => p.type === "asset"),
+    defaultValues: {
+      ...node.data,
+      label: node.data.label ?? definition.label,
+      description: node.data.description ?? definition.description,
+    } as any,
   });
 
   // Sync form when node changes (e.g. user selects a different node)
   useEffect(() => {
-    reset(node.data);
-  }, [node.id, reset, node.data]);
+    reset({
+      ...node.data,
+      label: node.data.label ?? definition.label,
+      description: node.data.description ?? definition.description,
+    });
+  }, [node.id, reset, node.data, definition]);
 
   if (!node || !definition) return null;
 
@@ -114,6 +117,9 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
     onUpdate(node.id, data);
     reset(data); // Clear dirty state
   };
+
+  // Filter out parameters that conflict with global fields
+  const customParameters = definition.parameters?.filter(p => p.id !== "label" && p.id !== "description") || [];
 
   return (
     <div className={cn(
@@ -143,25 +149,36 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-auto flex flex-col">
         <div className="flex-1 p-4 space-y-6">
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider underline decoration-muted-foreground/30">Type</label>
-            <div className="flex items-center space-x-2">
-                <div className={cn(
-                    "size-6 rounded flex items-center justify-center",
-                    definition.color === "blue" ? "bg-blue-500/10 text-blue-500" :
-                    definition.color === "orange" ? "bg-orange-500/10 text-orange-500" :
-                    "bg-purple-500/10 text-purple-500"
-                )}>
-                    <definition.icon className="size-3.5" />
-                </div>
-                <span className="text-sm font-medium">{definition.label}</span>
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-1.5">
+               <Label htmlFor="node-label" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+                  Custom Label
+               </Label>
+               <Input 
+                  id="node-label"
+                  {...register("label")}
+                  placeholder="e.g. Primary Source"
+                  className="h-8 text-sm font-bold border-primary/20 bg-primary/5 focus-visible:ring-primary/30"
+               />
+            </div>
+            
+            <div className="space-y-1.5">
+               <Label htmlFor="node-description" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+                  Annotation / Purpose
+               </Label>
+               <textarea 
+                  id="node-description"
+                  {...register("description")}
+                  placeholder="Optional notes about this operation..."
+                  className="w-full min-h-[60px] p-2 text-xs rounded-md border bg-muted/20 focus:outline-none focus:ring-1 focus:ring-primary/20 placeholder:italic transition-all"
+               />
             </div>
           </div>
 
           <Separator />
 
           <div className="space-y-4 pb-4">
-            {definition.parameters?.map((param) => {
+            {customParameters.map((param) => {
               const value = watch(param.id);
               
               return (
@@ -315,24 +332,18 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
                   )}
 
                   {param.type === "asset" && (
-                    <Select
+                    <AssetSelector
                       value={String(value ?? param.default ?? "")}
-                      onValueChange={(val) => setValue(param.id, val, { shouldDirty: true })}
-                    >
-                      <SelectTrigger id={param.id} className="h-8 w-full text-sm">
-                        <SelectValue placeholder="Select an asset" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {assets.map((asset: any) => (
-                          <SelectItem key={asset.id} value={asset.id}>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] bg-primary/10 text-primary px-1 rounded uppercase font-bold">{asset.asset_type}</span>
-                                <span>{asset.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(val) => setValue(param.id, val, { shouldDirty: true })}
+                      placeholder="Search and select assets..."
+                    />
+                  )}
+
+                  {param.type === "map" && (
+                    <MapInput 
+                      value={value} 
+                      onChange={(val) => setValue(param.id, val, { shouldDirty: true })} 
+                    />
                   )}
 
                   {errors[param.id] && (

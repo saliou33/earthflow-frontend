@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand, Database } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand, Database, Globe, Trash2, FileJson, Download, Upload, History, Copy } from "lucide-react";
 import Link from "next/link";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -26,6 +26,7 @@ import { BaseNode } from "@/components/nodes/base-node";
 import { NodePropertiesPanel } from "@/components/workflow/node-properties-panel";
 import { DataPanel } from "@/components/workflow/data-panel";
 import { AssetManagerModal } from "@/components/workflow/asset-manager-modal";
+import { ConnectionManagerModal } from "@/components/workflow/connection-manager-modal";
 import { NODE_REGISTRY, NODE_CATEGORIES } from "@/lib/workflow-registry";
 import { DEMO_WORKFLOW_ID, DEMO_WORKFLOW_DATA } from "@/lib/demo-data";
 
@@ -115,6 +116,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
   const [isExecuting, setIsExecuting] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+  const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
   const [newNodeName, setNewNodeName] = useState("");
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
 
@@ -213,6 +215,53 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     } finally {
       setIsExecuting(false);
     }
+  };
+
+  const onClearExecutions = async () => {
+    if (!confirm("Clear all execution results for this session?")) return;
+    setExecutionResults(null);
+    setLastExecutionAt(null);
+    toast.success("Execution results cleared locally");
+  };
+
+  const onExportWorkflow = () => {
+    const data = {
+      name: workflowName,
+      graph: { nodes, edges }
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${workflowName.replace(/\s+/g, "_").toLowerCase()}_export.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Workflow exported as JSON");
+  };
+
+  const onImportWorkflow = () => {
+     const input = document.createElement("input");
+     input.type = "file";
+     input.accept = ".json";
+     input.onchange = (e: any) => {
+       const file = e.target.files[0];
+       const reader = new FileReader();
+       reader.onload = (re: any) => {
+         try {
+           const data = JSON.parse(re.target.result);
+           if (data.graph && data.graph.nodes) {
+             setNodes(data.graph.nodes);
+             setEdges(data.graph.edges || []);
+             setWorkflowName(data.name || workflowName);
+             toast.success("Workflow imported successfully");
+           }
+         } catch (err) {
+           toast.error("Invalid workflow JSON");
+         }
+       };
+       reader.readAsText(file);
+     };
+     input.click();
   };
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -439,10 +488,18 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
           <Button 
             variant="ghost" 
             size="icon" 
-            className="shrink-0 h-8 w-8 hover:bg-muted text-muted-foreground mr-2"
+            className="shrink-0 h-8 w-8 hover:bg-muted text-muted-foreground mr-1"
             onClick={() => setIsAssetModalOpen(true)}
           >
             <Database className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="shrink-0 h-8 w-8 hover:bg-muted text-muted-foreground mr-2"
+            onClick={() => setIsConnectionModalOpen(true)}
+          >
+            <Globe className="h-4 w-4" />
           </Button>
           <div className="relative flex items-center group max-w-[400px] min-w-[120px]">
              {/* Invisible span to measure content width */}
@@ -459,6 +516,40 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
         </div>
         
         <div className="flex items-center space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:bg-muted hover:text-foreground">
+                <Menu className="mr-2 h-4 w-4" />
+                Workflow
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 font-bold">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest opacity-50">Operations</DropdownMenuLabel>
+              <DropdownMenuItem onClick={onClearExecutions} className="text-destructive focus:text-destructive cursor-pointer">
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Clear Executions</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {}} className="cursor-pointer">
+                <History className="mr-2 h-4 w-4" />
+                <span>Run History</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest opacity-50">Management</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => {}} className="cursor-pointer">
+                <Copy className="mr-2 h-4 w-4" />
+                <span>Duplicate Workflow</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportWorkflow} className="cursor-pointer">
+                <Download className="mr-2 h-4 w-4" />
+                <span>Export as JSON</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onImportWorkflow} className="cursor-pointer">
+                <Upload className="mr-2 h-4 w-4" />
+                <span>Import JSON</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:bg-muted hover:text-foreground">
@@ -586,6 +677,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
 
       {/* Asset Manager Modal */}
       <AssetManagerModal open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen} />
+      <ConnectionManagerModal open={isConnectionModalOpen} onOpenChange={setIsConnectionModalOpen} />
     </div>
   );
 }
