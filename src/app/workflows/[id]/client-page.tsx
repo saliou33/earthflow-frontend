@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand, Database, Globe, Trash2, FileJson, Download, Upload, History, Copy } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand, Database, Globe, Trash2, FileJson, Download, Upload, History, Copy, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -117,8 +117,18 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const [newNodeName, setNewNodeName] = useState("");
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+
+  const { data: executionHistory, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ["workflows", workflowId, "executions"],
+    queryFn: async () => {
+      const res = await apiClient.get(`v1/workflows/${workflowId}/executions`);
+      return res.data;
+    },
+    enabled: isHistoryDialogOpen,
+  });
 
   // Derived state to always have the latest node data
   const selectedNode = useMemo(() => 
@@ -218,10 +228,16 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
   };
 
   const onClearExecutions = async () => {
-    if (!confirm("Clear all execution results for this session?")) return;
-    setExecutionResults(null);
-    setLastExecutionAt(null);
-    toast.success("Execution results cleared locally");
+    if (!confirm("Clear all execution results for this workflow? (This will also delete them from the database)")) return;
+    try {
+      await apiClient.delete(`v1/workflows/${workflowId}/executions`);
+      setExecutionResults(null);
+      setLastExecutionAt(null);
+      toast.success("Execution history cleared successfully");
+      queryClient.invalidateQueries({ queryKey: ["workflows", workflowId, "executions"] });
+    } catch (error) {
+      toast.error("Failed to clear execution history");
+    }
   };
 
   const onExportWorkflow = () => {
@@ -529,7 +545,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                 <Trash2 className="mr-2 h-4 w-4" />
                 <span>Clear Executions</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {}} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => setIsHistoryDialogOpen(true)} className="cursor-pointer">
                 <History className="mr-2 h-4 w-4" />
                 <span>Run History</span>
               </DropdownMenuItem>
@@ -674,6 +690,79 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
 
       {/* Data Results Panel */}
       <DataPanel />
+
+      {/* Run History Dialog */}
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2 shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+                <History className="size-5 text-primary" />
+                Workflow Run History
+            </DialogTitle>
+            <DialogDescription>
+              A history of recent executions for this workflow.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto p-6 pt-2">
+            {isLoadingHistory ? (
+                <div className="py-20 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="size-6 animate-spin text-primary" />
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Retrieving Logs...</span>
+                </div>
+            ) : !executionHistory || executionHistory.length === 0 ? (
+                <div className="py-20 flex flex-col items-center justify-center text-center opacity-40">
+                    <History className="size-12 mb-4" />
+                    <p className="font-bold">No execution history found</p>
+                    <p className="text-xs">Run the workflow to see results here</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {executionHistory.map((exec: any) => (
+                        <div 
+                            key={exec.id} 
+                            className="group p-4 rounded-xl border bg-muted/20 hover:bg-muted/40 transition-all flex items-center justify-between cursor-pointer"
+                            onClick={() => {
+                                setExecutionResults(exec.results);
+                                setLastExecutionAt(exec.created_at);
+                                setIsHistoryDialogOpen(false);
+                                setIsDataPanelOpen(true);
+                                toast.success("Loaded historical results");
+                            }}
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className={cn(
+                                    "size-10 rounded-full flex items-center justify-center",
+                                    exec.status === "completed" ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"
+                                )}>
+                                    {exec.status === "completed" ? <Play className="size-5" /> : <AlertCircle className="size-5" />}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold uppercase tracking-tight">
+                                        {new Date(exec.created_at).toLocaleString()}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground font-mono">
+                                        Execution Time: {exec.execution_time_ms}ms • Status: {exec.status}
+                                    </span>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Download className="size-4" />
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            )}
+          </div>
+          <DialogFooter className="p-6 pt-2 border-t bg-muted/10">
+             <Button variant="outline" onClick={() => setIsHistoryDialogOpen(false)}>Close</Button>
+             <Button variant="destructive" size="sm" onClick={() => {
+                 onClearExecutions();
+                 setIsHistoryDialogOpen(false);
+             }}>Clear All</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Asset Manager Modal */}
       <AssetManagerModal open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen} />

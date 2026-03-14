@@ -28,6 +28,7 @@ import { DateTimeRangePicker } from "@/components/ui/date-time-range-picker";
 import { AutocompleteHelper } from "@/components/workflow/autocomplete-helper";
 import { MapInput } from "@/components/workflow/map-input";
 import { AssetSelector } from "@/components/workflow/asset-selector";
+import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 
 interface NodePropertiesPanelProps {
@@ -92,7 +93,7 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
     reset,
     watch,
     setValue,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(schema as any),
     defaultValues: {
@@ -101,6 +102,16 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
       description: node.data.description ?? definition.description,
     } as any,
   });
+
+  const formData = watch();
+  const debouncedFormData = useDebounce(formData, 500);
+
+  // Auto-save on form change
+  useEffect(() => {
+    if (debouncedFormData) {
+        onUpdate(node.id, debouncedFormData);
+    }
+  }, [debouncedFormData, node.id, onUpdate]);
 
   // Sync form when node changes (e.g. user selects a different node)
   useEffect(() => {
@@ -112,11 +123,6 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
   }, [node.id, reset, node.data, definition]);
 
   if (!node || !definition) return null;
-
-  const onSubmit = (data: any) => {
-    onUpdate(node.id, data);
-    reset(data); // Clear dirty state
-  };
 
   // Filter out parameters that conflict with global fields
   const customParameters = definition.parameters?.filter(p => p.id !== "label" && p.id !== "description") || [];
@@ -147,7 +153,7 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-auto flex flex-col">
+      <form className="flex-1 overflow-auto flex flex-col">
         <div className="flex-1 p-4 space-y-6">
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-1.5">
@@ -357,16 +363,6 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
           </div>
         </div>
 
-        <div className="p-4 border-t bg-muted/10 shrink-0">
-            <Button 
-                type="submit" 
-                className="w-full shadow-lg h-9 bg-primary text-primary-foreground font-bold text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95" 
-                size="sm"
-                disabled={!isDirty}
-            >
-                Apply Changes
-            </Button>
-        </div>
       </form>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { NodeDefinition, NODE_REGISTRY } from "@/lib/workflow-registry";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,26 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
     purple: "border-purple-500",
   }[definition.color] || "border-primary";
 
+  // Determine the display label dynamically
+  const displayLabel = useMemo(() => {
+    if (data.label) return data.label;
+
+    // Check if there is exactly one custom parameter with a value
+    const customParams = definition.parameters?.filter((p: any) => p.id !== "label" && p.id !== "description") || [];
+    if (customParams.length === 1) {
+        const paramId = customParams[0].id;
+        const val = data[paramId];
+        if (val && typeof val === "string") {
+            // Shorten if it's too long (e.g. an asset name or long text)
+            return val.length > 20 ? val.substring(0, 17) + "..." : val;
+        }
+    }
+
+    return definition.label;
+  }, [data, definition]);
+
+  const displayDescription = data.description || definition.description;
+
   return (
     <div className={cn(
       "relative bg-card border-2 rounded-xl shadow-lg min-w-[200px] transition-all duration-200",
@@ -71,13 +92,13 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
       <div className={cn("p-2 flex items-center justify-between border-b border-current/20 rounded-t-[10px]", colorClass)}>
         <div className="flex items-center space-x-2">
           <Icon className="h-4 w-4" />
-          <span className="font-semibold text-sm">{data.label || definition.label}</span>
+          <span className="font-semibold text-sm">{displayLabel}</span>
         </div>
       </div>
 
       <div className="p-4 flex flex-col items-center justify-center min-h-[60px]">
         <span className="text-muted-foreground text-[10px] font-medium text-center line-clamp-2">
-          {data.description || definition.description}
+          {displayDescription}
         </span>
       </div>
 
