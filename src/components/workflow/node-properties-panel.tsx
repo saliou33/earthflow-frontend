@@ -44,7 +44,7 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
   // Generate Zod schema dynamically based on definition parameters
   const schema = useMemo(() => {
     const shape: Record<string, any> = {
-      label: z.string().min(1, "Label is required"),
+      label: z.string().optional(),
       description: z.string().optional(),
     };
     definition?.parameters?.forEach((param) => {
@@ -311,7 +311,10 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
                   {param.type === "asset" && (
                     <AssetSelector
                       value={String(value ?? param.default ?? "")}
-                      onChange={(val) => setValue(param.id, val, { shouldDirty: true })}
+                      onChange={(val, assetName) => {
+                         setValue(param.id, val, { shouldDirty: true });
+                         if (assetName) setValue(`_${param.id}Name`, assetName, { shouldDirty: true });
+                      }}
                       placeholder="Search and select assets..."
                     />
                   )}

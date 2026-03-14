@@ -47,8 +47,10 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
 
     // 2. Dynamic label based on the main parameter defined in registry
     if (definition.mainParameter) {
-        const val = data[definition.mainParameter];
-        if (val && typeof val === "string") {
+        // Check for an explicit naming override from selectors (e.g. _assetIdName)
+        let val = data[`_${definition.mainParameter}Name`] || data[definition.mainParameter];
+        if (val !== undefined && val !== null && val !== "") {
+            val = String(val); // Safely convert numbers or booleans to string
             // Shorten if it's too long
             return val.length > 20 ? val.substring(0, 17) + "..." : val;
         }

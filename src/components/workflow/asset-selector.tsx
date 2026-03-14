@@ -22,7 +22,7 @@ interface Asset {
 
 interface AssetSelectorProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, assetName?: string) => void;
   placeholder?: string;
 }
 
@@ -141,7 +141,7 @@ export function AssetSelector({ value, onChange, placeholder = "Select an asset.
                   <button
                     key={asset.id}
                     onClick={() => {
-                      onChange(asset.id);
+                      onChange(asset.id, asset.name);
                       setOpen(false);
                     }}
                     className={cn(
