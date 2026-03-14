@@ -184,10 +184,10 @@ export const DataPanel = memo(function DataPanel() {
                    {nodes.map(n => {
                       const hasOutput = executionResults && executionResults[n.id];
                       const isError = hasOutput && hasOutput.error;
-                      const definition = NODE_REGISTRY[n.type];
+                      const definition = n.type ? NODE_REGISTRY[n.type] : undefined;
                       const data = n.data as any;
                       
-                      let resolvedLabel = data.label || (definition?.mainParameter ? (data[`_${definition.mainParameter}Name`] || data[definition.mainParameter]) : definition?.label) || n.type;
+                      let resolvedLabel = data.label || (definition?.mainParameter ? (data[`_${definition.mainParameter}Name`] || data[definition.mainParameter]) : definition?.label) || n.type || "Untitled";
                       if (typeof resolvedLabel === "string" && resolvedLabel.length > 24) {
                           resolvedLabel = resolvedLabel.substring(0, 21) + "...";
                       }
@@ -245,11 +245,19 @@ export const DataPanel = memo(function DataPanel() {
                       <div className="flex items-center justify-between border-b border-primary/10 pb-6">
                           <div className="space-y-1.5">
                               <h4 className="text-2xl font-black tracking-tighter text-foreground/90">
-                                {String((selectedNode?.data as any)?.label || 
-                                  (selectedNode && NODE_REGISTRY[selectedNode.type]?.mainParameter ? 
-                                    ((selectedNode.data as any)[`_${NODE_REGISTRY[selectedNode.type].mainParameter}Name`] || (selectedNode.data as any)[NODE_REGISTRY[selectedNode.type].mainParameter]) : 
-                                    NODE_REGISTRY[selectedNode?.type as string]?.label) || 
-                                  selectedNode?.type || "Untitled Source")}
+                                {(() => {
+                                  if (!selectedNode) return "Untitled Source";
+                                  const data = selectedNode.data as any;
+                                  if (data.label) return data.label;
+                                  
+                                  const definition = selectedNode.type ? NODE_REGISTRY[selectedNode.type] : undefined;
+                                  if (definition?.mainParameter) {
+                                    const paramName = definition.mainParameter;
+                                    return data[`_${paramName}Name`] || data[paramName] || definition.label;
+                                  }
+                                  
+                                  return definition?.label || selectedNode.type || "Untitled Source";
+                                })()}
                               </h4>
                               <div className="flex items-center gap-2">
                                   <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">System Metadata</span>
