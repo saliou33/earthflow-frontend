@@ -21,6 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import { DataTablePreview } from "../data/data-table";
 import { SpatialMapPreview } from "../data/spatial-map";
+import { NODE_REGISTRY } from "@/lib/workflow-registry";
 
 export const DataPanel = memo(function DataPanel() {
   const { 
@@ -180,9 +181,17 @@ export const DataPanel = memo(function DataPanel() {
                   <Search className="size-3 text-muted-foreground/50" />
               </div>
               <div className="flex-1 overflow-auto p-2 space-y-1">
-                  {nodes.map(n => {
+                   {nodes.map(n => {
                       const hasOutput = executionResults && executionResults[n.id];
                       const isError = hasOutput && hasOutput.error;
+                      const definition = NODE_REGISTRY[n.type];
+                      const data = n.data as any;
+                      
+                      let resolvedLabel = data.label || (definition?.mainParameter ? (data[`_${definition.mainParameter}Name`] || data[definition.mainParameter]) : definition?.label) || n.type;
+                      if (typeof resolvedLabel === "string" && resolvedLabel.length > 24) {
+                          resolvedLabel = resolvedLabel.substring(0, 21) + "...";
+                      }
+
                       return (
                           <button
                               key={n.id}
@@ -193,7 +202,7 @@ export const DataPanel = memo(function DataPanel() {
                               )}
                           >
                               <Database className={cn("size-3.5", selectedNodeId === n.id ? "text-primary-foreground" : (hasOutput ? "text-green-500" : "opacity-30"), isError && "text-destructive")} />
-                              <span className="text-xs font-bold truncate flex-1 tracking-tight">{String((n.data as any).label || n.type)}</span>
+                              <span className="text-xs font-bold truncate flex-1 tracking-tight">{resolvedLabel}</span>
                           </button>
                       )
                   })}
@@ -235,7 +244,13 @@ export const DataPanel = memo(function DataPanel() {
 
                       <div className="flex items-center justify-between border-b border-primary/10 pb-6">
                           <div className="space-y-1.5">
-                              <h4 className="text-2xl font-black tracking-tighter text-foreground/90">{String((selectedNode?.data as any)?.label || selectedNode?.type || "Untitled Source")}</h4>
+                              <h4 className="text-2xl font-black tracking-tighter text-foreground/90">
+                                {String((selectedNode?.data as any)?.label || 
+                                  (selectedNode && NODE_REGISTRY[selectedNode.type]?.mainParameter ? 
+                                    ((selectedNode.data as any)[`_${NODE_REGISTRY[selectedNode.type].mainParameter}Name`] || (selectedNode.data as any)[NODE_REGISTRY[selectedNode.type].mainParameter]) : 
+                                    NODE_REGISTRY[selectedNode?.type as string]?.label) || 
+                                  selectedNode?.type || "Untitled Source")}
+                              </h4>
                               <div className="flex items-center gap-2">
                                   <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">System Metadata</span>
                                   <Separator orientation="vertical" className="h-2" />
