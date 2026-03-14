@@ -446,6 +446,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
           {isPropertiesOpen && selectedNode && isPropertiesExpanded && (
             <div className="w-80 shadow-xl z-20 transition-all animate-in slide-in-from-right duration-300 flex flex-col">
               <NodePropertiesPanel 
+                key={selectedNode.id}
                 node={selectedNode} 
                 onClose={() => setIsPropertiesOpen(false)}
                 onUpdate={updateNodeData}
@@ -458,6 +459,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
       {isPropertiesOpen && selectedNode && !isPropertiesExpanded && (
         <div className="absolute top-20 right-4 bottom-24 z-10 w-80 shadow-lg flex flex-col transition-all duration-300 animate-in fade-in zoom-in-95">
           <NodePropertiesPanel 
+            key={selectedNode.id}
             node={selectedNode} 
             onClose={() => setIsPropertiesOpen(false)}
             onUpdate={updateNodeData}
