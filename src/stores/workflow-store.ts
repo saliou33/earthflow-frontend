@@ -15,6 +15,7 @@ interface WorkflowState {
   nodes: Node[];
   edges: Edge[];
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   workflowName: string;
   // UI State
   isSidebarOpen: boolean;
@@ -39,6 +40,7 @@ interface WorkflowState {
   setEdges: (edges: Edge[]) => void;
   setWorkflowName: (name: string) => void;
   setSelectedNodeId: (id: string | null) => void;
+  setSelectedEdgeId: (id: string | null) => void;
   setIsSidebarOpen: (open: boolean) => void;
   setIsPropertiesOpen: (open: boolean) => void;
   setIsPropertiesExpanded: (expanded: boolean) => void;
@@ -64,6 +66,7 @@ interface WorkflowState {
   addNode: (type: string, position: { x: number, y: number }, label?: string) => string;
   updateNodeData: (nodeId: string, data: any) => void;
   deleteNode: (nodeId: string) => void;
+  deleteEdge: (edgeId: string) => void;
   duplicateNode: (nodeId: string) => void;
 }
 
@@ -71,6 +74,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
+  selectedEdgeId: null,
   workflowName: "",
   isSidebarOpen: true,
   isPropertiesOpen: false,
@@ -90,7 +94,8 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
   setWorkflowName: (workflowName) => set({ workflowName }),
-  setSelectedNodeId: (selectedNodeId) => set({ selectedNodeId }),
+  setSelectedNodeId: (selectedNodeId) => set({ selectedNodeId, selectedEdgeId: null }),
+  setSelectedEdgeId: (selectedEdgeId) => set({ selectedEdgeId, selectedNodeId: null }),
   setIsSidebarOpen: (isSidebarOpen) => set({ isSidebarOpen }),
   setIsPropertiesOpen: (isPropertiesOpen) => set({ isPropertiesOpen }),
   setIsPropertiesExpanded: (isPropertiesExpanded) => set({ isPropertiesExpanded }),
@@ -176,6 +181,13 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       ),
       selectedNodeId: get().selectedNodeId === nodeId ? null : get().selectedNodeId,
       isPropertiesOpen: get().selectedNodeId === nodeId ? false : get().isPropertiesOpen,
+    });
+  },
+
+  deleteEdge: (edgeId) => {
+    set({
+      edges: get().edges.filter((edge) => edge.id !== edgeId),
+      selectedEdgeId: get().selectedEdgeId === edgeId ? null : get().selectedEdgeId,
     });
   },
 

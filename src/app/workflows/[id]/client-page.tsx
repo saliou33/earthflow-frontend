@@ -99,6 +99,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     nodes,
     edges,
     selectedNodeId,
+    selectedEdgeId,
     workflowName,
     isSidebarOpen,
     isPropertiesOpen,
@@ -113,6 +114,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     setEdges,
     setWorkflowName,
     setSelectedNodeId,
+    setSelectedEdgeId,
     setIsSidebarOpen,
     setIsPropertiesOpen,
     setIsPropertiesExpanded,
@@ -130,6 +132,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     addNode,
     updateNodeData,
     deleteNode,
+    deleteEdge,
     duplicateNode,
     executionResults,
     setExecutionResults,
@@ -387,15 +390,23 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
                         onNodeClick={onNodeClick}
+                        onEdgeClick={(event, edge) => {
+                            setSelectedEdgeId(edge.id);
+                        }}
                         onNodeContextMenu={(event, node) => {
                             setSelectedNodeId(node.id);
                         }}
+                        onEdgeContextMenu={(event, edge) => {
+                            setSelectedEdgeId(edge.id);
+                        }}
                         onPaneContextMenu={(event) => {
                             setSelectedNodeId(null);
+                            setSelectedEdgeId(null);
                             setIsPropertiesOpen(false);
                         }}
                         onPaneClick={() => {
                             setSelectedNodeId(null);
+                            setSelectedEdgeId(null);
                             setIsPropertiesOpen(false);
                         }}
                         nodeTypes={nodeTypes}
@@ -426,6 +437,13 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                             <ContextMenuSeparator />
                             <ContextMenuItem className="text-destructive" onClick={() => deleteNode(selectedNode.id)}>
                                 Delete Node
+                            </ContextMenuItem>
+                        </>
+                    ) : selectedEdgeId ? (
+                         <>
+                            <ContextMenuLabel>Edge: Connection</ContextMenuLabel>
+                            <ContextMenuItem className="text-destructive" onClick={() => deleteEdge(selectedEdgeId)}>
+                                Delete Connection
                             </ContextMenuItem>
                         </>
                     ) : (
