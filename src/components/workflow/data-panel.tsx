@@ -42,8 +42,8 @@ export const DataPanel = memo(function DataPanel() {
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
   const nodeOutput = selectedNodeId && executionResults ? executionResults[selectedNodeId] : null;
 
-  // Extract asset metadata if it's a JSON output
-  const asset = nodeOutput?.output?.type === "Json" ? nodeOutput.output.value : null;
+  // Extract asset metadata if it's an Asset output
+  const asset = nodeOutput?.output?.type === "Asset" ? nodeOutput.output.value : null;
 
   // Fetch presigned URL for the asset
   const { data: presignedData } = useQuery({
@@ -229,7 +229,7 @@ export const DataPanel = memo(function DataPanel() {
                               active={activeTab === "map"} 
                               onClick={() => setActiveTab("map")}
                               icon={<MapIcon className="size-3.5" />}
-                              label="Analysis" 
+                              label="Map" 
                           />
                       </div>
 
