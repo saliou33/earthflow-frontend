@@ -190,7 +190,7 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
               return (
                 <div key={param.id} className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor={param.id} className="text-xs font-semibold flex items-center gap-1">
+                    <Label htmlFor={param.id} className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-1">
                       {param.label}
                       {param.required && <span className="text-destructive">*</span>}
                     </Label>
