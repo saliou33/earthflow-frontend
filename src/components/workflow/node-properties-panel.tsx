@@ -154,8 +154,7 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
       </div>
 
       <form className="flex-1 overflow-auto flex flex-col">
-        <div className="flex-1 p-4 space-y-6">
-          <div className="grid grid-cols-1 gap-4">
+        <div className="flex-1 p-4 space-y-5 pb-8">
             <div className="space-y-1.5">
                <Label htmlFor="node-label" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
                   Custom Label
@@ -179,11 +178,8 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
                   className="w-full min-h-[60px] p-2 text-xs rounded-md border bg-muted/20 focus:outline-none focus:ring-1 focus:ring-primary/20 placeholder:italic transition-all"
                />
             </div>
-          </div>
 
-          <Separator />
-
-          <div className="space-y-4 pb-4">
+          {customParameters.length > 0 && <Separator className="my-2" />}
             {customParameters.map((param) => {
               const value = watch(param.id);
               
@@ -360,7 +356,6 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
                 </div>
               );
             })}
-          </div>
         </div>
 
       </form>
