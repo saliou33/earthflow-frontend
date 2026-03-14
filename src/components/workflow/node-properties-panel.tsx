@@ -345,7 +345,7 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
                   id="node-label"
                   {...register("label")}
                   placeholder={definition.label}
-                  className="h-8 text-sm font-bold border-primary/20 bg-primary/5 focus-visible:ring-primary/30"
+                  className="h-8 text-sm font-bold border-primary/20 bg-primary/5 focus-visible:ring-primary/30 placeholder:font-normal placeholder:text-muted-foreground/50"
                />
             </div>
             
