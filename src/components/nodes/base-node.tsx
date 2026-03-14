@@ -79,17 +79,16 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
           <AlertCircle className="size-3 text-white animate-pulse" />
         </div>
       )}
-      {/* Target Handles */}
-      {definition.inputs !== undefined && definition.inputs > 0 && Array.from({ length: definition.inputs }).map((_, i) => (
+      {/* Target Handle: Unified 'input' port */}
+      {definition.inputs !== undefined && definition.inputs > 0 && (
         <Handle
-          key={`in-${i}`}
           type="target"
           position={Position.Left}
-          id={`in-${i}`}
-          style={{ top: definition.inputs === 1 ? '50%' : `${25 + (i * (50 / (definition.inputs! - 1)))}%` }}
+          id="input"
+          style={{ top: '50%' }}
           className={cn("w-3 h-3 border-2 border-background", borderColor.replace('border-', 'bg-'))}
         />
-      ))}
+      )}
 
       <div className={cn("p-2 flex items-center justify-between border-b border-current/20 rounded-t-[10px]", colorClass)}>
         <div className="flex items-center space-x-2">
@@ -104,17 +103,16 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
         </span>
       </div>
 
-      {/* Source Handles */}
-      {definition.outputs !== undefined && definition.outputs > 0 && Array.from({ length: definition.outputs }).map((_, i) => (
+      {/* Source Handle: Unified 'output' port */}
+      {definition.outputs !== undefined && definition.outputs > 0 && (
         <Handle
-          key={`out-${i}`}
           type="source"
           position={Position.Right}
-          id={`out-${i}`}
-          style={{ top: definition.outputs === 1 ? '50%' : `${25 + (i * (50 / (definition.outputs! - 1)))}%` }}
+          id="output"
+          style={{ top: '50%' }}
           className={cn("w-3 h-3 border-2 border-background", borderColor.replace('border-', 'bg-'))}
         />
-      ))}
+      )}
     </div>
   );
 }

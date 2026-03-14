@@ -26,7 +26,6 @@ interface WorkflowState {
   isHistoryDialogOpen: boolean;
   isExecuting: boolean;
   newNodeName: string;
-  nodeToDelete: string | null;
   isClearExecutionsAlertOpen: boolean;
   
   // Execution & UI Panels
@@ -49,7 +48,6 @@ interface WorkflowState {
   setIsHistoryDialogOpen: (open: boolean) => void;
   setIsExecuting: (executing: boolean) => void;
   setNewNodeName: (name: string) => void;
-  setNodeToDelete: (id: string | null) => void;
   setIsClearExecutionsAlertOpen: (open: boolean) => void;
   
   setExecutionResults: (results: Record<string, any> | null) => void;
@@ -83,7 +81,6 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   isHistoryDialogOpen: false,
   isExecuting: false,
   newNodeName: "",
-  nodeToDelete: null,
   isClearExecutionsAlertOpen: false,
   executionResults: null,
   lastExecutionAt: null,
@@ -103,7 +100,6 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   setIsHistoryDialogOpen: (isHistoryDialogOpen) => set({ isHistoryDialogOpen }),
   setIsExecuting: (isExecuting) => set({ isExecuting }),
   setNewNodeName: (newNodeName) => set({ newNodeName }),
-  setNodeToDelete: (nodeToDelete) => set({ nodeToDelete }),
   setIsClearExecutionsAlertOpen: (isClearExecutionsAlertOpen) => set({ isClearExecutionsAlertOpen }),
 
   setExecutionResults: (executionResults) => set({ executionResults }),
@@ -146,7 +142,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
 
   addNode: (type, position, label) => {
     const newNode: Node = {
-      id: `${type}-${Date.now()}`,
+      id: crypto.randomUUID(),
       type,
       position,
       data: label ? { label } : {},
@@ -189,7 +185,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
 
     const newNode = {
       ...node,
-      id: `${node.type}-${Date.now()}`,
+      id: crypto.randomUUID(),
       position: { x: node.position.x + 50, y: node.position.y + 50 },
       selected: false,
     };

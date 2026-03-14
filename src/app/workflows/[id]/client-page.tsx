@@ -122,9 +122,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     setIsHistoryDialogOpen,
     setIsExecuting,
     setNewNodeName,
-    nodeToDelete,
     isClearExecutionsAlertOpen,
-    setNodeToDelete,
     setIsClearExecutionsAlertOpen,
     onNodesChange,
     onEdgesChange,
@@ -426,7 +424,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                             <ContextMenuItem onClick={() => duplicateNode(selectedNode.id)}>Duplicate</ContextMenuItem>
                             <ContextMenuItem onClick={() => setIsPropertiesOpen(true)}>Settings</ContextMenuItem>
                             <ContextMenuSeparator />
-                            <ContextMenuItem className="text-destructive" onClick={() => setNodeToDelete(selectedNode.id)}>
+                            <ContextMenuItem className="text-destructive" onClick={() => deleteNode(selectedNode.id)}>
                                 Delete Node
                             </ContextMenuItem>
                         </>
@@ -791,27 +789,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
       <ConnectionManagerModal open={isConnectionModalOpen} onOpenChange={setIsConnectionModalOpen} />
 
       {/* Alert Dialogs */}
-      <AlertDialog open={!!nodeToDelete} onOpenChange={(open) => !open && setNodeToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the selected node from the workflow canvas. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => {
-                    if (nodeToDelete) deleteNode(nodeToDelete);
-                }}
-            >
-              Delete Node
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
 
       <AlertDialog open={isClearExecutionsAlertOpen} onOpenChange={setIsClearExecutionsAlertOpen}>
         <AlertDialogContent>
