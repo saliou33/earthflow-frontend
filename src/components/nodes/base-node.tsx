@@ -42,19 +42,19 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
 
   // Determine the display label dynamically
   const displayLabel = useMemo(() => {
+    // 1. User's explicit custom label
     if (data.label) return data.label;
 
-    // Check if there is exactly one custom parameter with a value
-    const customParams = definition.parameters?.filter((p: any) => p.id !== "label" && p.id !== "description") || [];
-    if (customParams.length === 1) {
-        const paramId = customParams[0].id;
-        const val = data[paramId];
+    // 2. Dynamic label based on the main parameter defined in registry
+    if (definition.mainParameter) {
+        const val = data[definition.mainParameter];
         if (val && typeof val === "string") {
-            // Shorten if it's too long (e.g. an asset name or long text)
+            // Shorten if it's too long
             return val.length > 20 ? val.substring(0, 17) + "..." : val;
         }
     }
 
+    // 3. Fallback to default human-readable type label
     return definition.label;
   }, [data, definition]);
 

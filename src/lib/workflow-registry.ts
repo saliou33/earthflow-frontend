@@ -30,6 +30,7 @@ export interface NodeDefinition {
   inputs?: number;
   outputs?: number;
   parameters?: NodeParameter[];
+  mainParameter?: string;
 }
 
 export const NODE_CATEGORIES: { id: NodeCategory; label: string; icon: LucideIcon; color: string }[] = [
@@ -51,6 +52,7 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
     icon: Database,
     color: "blue",
     outputs: 1,
+    mainParameter: "assetId",
     parameters: [
       { id: "assetId", label: "Selected Asset", type: "asset", required: true }
     ]
@@ -63,14 +65,15 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
     icon: Hash,
     color: "blue",
     outputs: 1,
+    mainParameter: "label",
     parameters: [
       { id: "label", label: "Variable Name", type: "text", required: true },
       { id: "inputType", label: "Type", type: "select", default: "float", options: [{ label: "Number", value: "float" }, { label: "String", value: "string" }] },
       { id: "value", label: "Value", type: "text", required: true }
     ]
   },
-  "source.wms": { type: "source.wms", label: "WMS Layer", description: "Load WMS tiles", category: "io", icon: Map, color: "blue", outputs: 1, parameters: [{ id: "url", label: "Service URL", type: "text", required: true }, { id: "layers", label: "Layers", type: "text" }] },
-  "source.wfs": { type: "source.wfs", label: "WFS Layer", description: "Load WFS features", category: "io", icon: Map, color: "blue", outputs: 1, parameters: [{ id: "url", label: "Service URL", type: "text", required: true }, { id: "typename", label: "Type Name", type: "text" }] },
+  "source.wms": { type: "source.wms", label: "WMS Layer", description: "Load WMS tiles", category: "io", icon: Map, color: "blue", outputs: 1, mainParameter: "url", parameters: [{ id: "url", label: "Service URL", type: "text", required: true }, { id: "layers", label: "Layers", type: "text" }] },
+  "source.wfs": { type: "source.wfs", label: "WFS Layer", description: "Load WFS features", category: "io", icon: Map, color: "blue", outputs: 1, mainParameter: "url", parameters: [{ id: "url", label: "Service URL", type: "text", required: true }, { id: "typename", label: "Type Name", type: "text" }] },
   "io.draw": { 
     type: "io.draw", 
     label: "Draw Data", 
@@ -79,6 +82,7 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
     icon: Scissors, 
     color: "blue", 
     outputs: 1, 
+    mainParameter: "label",
     parameters: [
       { id: "label", label: "Geometry Name", type: "text" },
       { id: "geometry", label: "GeoJSON Data", type: "map", required: true }
@@ -92,6 +96,7 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
     icon: Database,
     color: "blue",
     outputs: 1,
+    mainParameter: "connectionName",
     parameters: [
       { id: "connectionName", label: "Connection", type: "text", required: true },
       { id: "query", label: "SQL Query", type: "text", required: true, default: "SELECT * FROM my_table" }
@@ -172,8 +177,8 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
   ] },
   "raster.statistics": { type: "raster.statistics", label: "Raster Stats", description: "Min/Max/Mean/StdDev", category: "raster", icon: Calculator, color: "emerald", inputs: 1, outputs: 1, parameters: [{ id: "bands", label: "Bands", type: "text", default: "1", placeholder: "e.g. 1,2,3" }] },
   "raster.hillshade": { type: "raster.hillshade", label: "Hillshade", description: "Terrain hillshade", category: "raster", icon: Layers, color: "emerald", inputs: 1, outputs: 1, parameters: [{ id: "azimuth", label: "Azimuth", type: "number", default: 315, min: 0, max: 360 }, { id: "altitude", label: "Altitude", type: "number", default: 45, min: 0, max: 90 }, { id: "zFactor", label: "Z Factor", type: "number", default: 1.0 }] },
-  "raster.resample": { type: "raster.resample", label: "Resample", description: "Change pixel size", category: "raster", icon: RefreshCcw, color: "emerald", inputs: 1, outputs: 1, parameters: [{ id: "resolution", label: "Target Resolution (m)", type: "number", required: true }, { id: "method", label: "Method", type: "select", options: [{ label: "Nearest Neighbor", value: "near" }, { label: "Bilinear", value: "bilinear" }, { label: "Cubic", value: "cubic" }, { label: "Lanczos", value: "lanczos" }] }] },
-  "raster.band_math": { type: "raster.band_math", label: "Band Math", description: "Map algebra", category: "raster", icon: Calculator, color: "emerald", inputs: 2, outputs: 1, parameters: [{ id: "expression", label: "Algebraic Expression", type: "text", placeholder: "(B1 - B2) / (B1 + B2)", required: true }] },
+  "raster.resample": { type: "raster.resample", label: "Resample", description: "Change pixel size", category: "raster", icon: RefreshCcw, color: "emerald", inputs: 1, outputs: 1, mainParameter: "resolution", parameters: [{ id: "resolution", label: "Target Resolution (m)", type: "number", required: true }, { id: "method", label: "Method", type: "select", options: [{ label: "Nearest Neighbor", value: "near" }, { label: "Bilinear", value: "bilinear" }, { label: "Cubic", value: "cubic" }, { label: "Lanczos", value: "lanczos" }] }] },
+  "raster.band_math": { type: "raster.band_math", label: "Band Math", description: "Map algebra", category: "raster", icon: Calculator, color: "emerald", inputs: 2, outputs: 1, mainParameter: "expression", parameters: [{ id: "expression", label: "Algebraic Expression", type: "text", placeholder: "(B1 - B2) / (B1 + B2)", required: true }] },
   "raster.slope": { type: "raster.slope", label: "Slope", description: "Terrain slope", category: "raster", icon: Layers, color: "emerald", inputs: 1, outputs: 1, parameters: [{ id: "units", label: "Units", type: "select", options: [{ label: "Degrees", value: "degrees" }, { label: "Percent", value: "percent" }] }] },
   "raster.aspect": { type: "raster.aspect", label: "Aspect", description: "Terrain aspect", category: "raster", icon: Compass, color: "emerald", inputs: 1, outputs: 1, parameters: [] },
 
@@ -192,8 +197,8 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
   ] },
   "table.filter": { type: "table.filter", label: "Filter Rows", description: "Query table", category: "table", icon: FilterIcon, color: "amber", inputs: 1, outputs: 1, parameters: [{ id: "expression", label: "Filter Expr", type: "text", placeholder: "e.g. population > 1000" }] },
   "table.aggregate": { type: "table.aggregate", label: "Aggregate", description: "Group-by summary", category: "table", icon: Calculator, color: "amber", inputs: 1, outputs: 1, parameters: [{ id: "group_by", label: "Group By", type: "text" }, { id: "agg_fn", label: "Method", type: "select", options: [{ label: "Sum", value: "sum" }, { label: "Average", value: "avg" }, { label: "Count", value: "count" }] }] },
-  "table.rename_field": { type: "table.rename_field", label: "Rename", description: "Modify column names", category: "table", icon: Type, color: "amber", inputs: 1, outputs: 1, parameters: [{ id: "old_name", label: "Field", type: "text" }, { id: "new_name", label: "New Name", type: "text" }] },
-  "table.formula": { type: "table.formula", label: "Formula", description: "New computed column", category: "table", icon: Calculator, color: "amber", inputs: 1, outputs: 1, parameters: [
+  "table.rename_field": { type: "table.rename_field", label: "Rename", description: "Modify column names", category: "table", icon: Type, color: "amber", inputs: 1, outputs: 1, mainParameter: "new_name", parameters: [{ id: "old_name", label: "Field", type: "text" }, { id: "new_name", label: "New Name", type: "text" }] },
+  "table.formula": { type: "table.formula", label: "Formula", description: "New computed column", category: "table", icon: Calculator, color: "amber", inputs: 1, outputs: 1, mainParameter: "column_name", parameters: [
       { id: "column_name", label: "New Column Name", type: "text", required: true }, 
       { id: "formula", label: "Expression (Rhai/JS)", type: "text", required: true, placeholder: "e.g. col1 * col2 + 10" }
   ] },
@@ -213,6 +218,7 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
     color: "purple",
     inputs: 1,
     outputs: 1,
+    mainParameter: "expression",
     parameters: [{ id: "expression", label: "Formula", type: "text", required: true }]
   },
 };
