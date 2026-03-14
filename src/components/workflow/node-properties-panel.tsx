@@ -155,31 +155,6 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
 
       <form className="flex-1 overflow-auto flex flex-col">
         <div className="flex-1 p-4 space-y-5 pb-8">
-            <div className="space-y-1.5">
-               <Label htmlFor="node-label" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
-                  Custom Label
-               </Label>
-               <Input 
-                  id="node-label"
-                  {...register("label")}
-                  placeholder="e.g. Primary Source"
-                  className="h-8 text-sm font-bold border-primary/20 bg-primary/5 focus-visible:ring-primary/30"
-               />
-            </div>
-            
-            <div className="space-y-1.5">
-               <Label htmlFor="node-description" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
-                  Annotation / Purpose
-               </Label>
-               <textarea 
-                  id="node-description"
-                  {...register("description")}
-                  placeholder="Optional notes about this operation..."
-                  className="w-full min-h-[60px] p-2 text-xs rounded-md border bg-muted/20 focus:outline-none focus:ring-1 focus:ring-primary/20 placeholder:italic transition-all"
-               />
-            </div>
-
-          {customParameters.length > 0 && <Separator className="my-2" />}
             {customParameters.map((param) => {
               const value = watch(param.id);
               
@@ -356,6 +331,34 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
                 </div>
               );
             })}
+
+          {customParameters.length > 0 && <Separator className="my-2" />}
+
+            <div className="space-y-1.5">
+               <Label htmlFor="node-label" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+                  Custom Label
+               </Label>
+               <Input 
+                  id="node-label"
+                  {...register("label")}
+                  placeholder="e.g. Primary Source"
+                  className="h-8 text-sm font-bold border-primary/20 bg-primary/5 focus-visible:ring-primary/30"
+               />
+            </div>
+            
+            <div className="space-y-1.5">
+               <Label htmlFor="node-description" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+                  Annotation / Purpose
+               </Label>
+               <textarea 
+                  id="node-description"
+                  {...register("description")}
+                  placeholder="Optional notes about this operation..."
+                  className="w-full min-h-[60px] p-2 text-xs rounded-md border bg-muted/20 focus:outline-none focus:ring-1 focus:ring-primary/20 placeholder:italic transition-all"
+               />
+            </div>
+
+
         </div>
 
       </form>
