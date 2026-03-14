@@ -149,9 +149,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       id: `${type}-${Date.now()}`,
       type,
       position,
-      data: { 
-          label: label || type 
-      },
+      data: label ? { label } : {},
     };
 
     set({
