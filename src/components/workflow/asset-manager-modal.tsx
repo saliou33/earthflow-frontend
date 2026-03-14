@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -37,7 +37,7 @@ interface AssetManagerModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function AssetManagerModal({ open, onOpenChange }: AssetManagerModalProps) {
+export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenChange }: AssetManagerModalProps) {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -380,7 +380,7 @@ export function AssetManagerModal({ open, onOpenChange }: AssetManagerModalProps
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 function SidebarFilterItem({ active, onClick, label, count }: { active: boolean, onClick: () => void, label: string, count: number }) {
     return (

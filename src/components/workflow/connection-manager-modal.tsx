@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -62,7 +62,7 @@ const PROVIDERS = [
     { id: "BIGQUERY", label: "Google BigQuery", icon: Globe, color: "text-purple-500", bg: "bg-purple-500/10", description: "Enterprise scale analytics" },
 ] as const;
 
-export function ConnectionManagerModal({ open, onOpenChange }: ConnectionManagerModalProps) {
+export const ConnectionManagerModal = memo(function ConnectionManagerModal({ open, onOpenChange }: ConnectionManagerModalProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<"list" | "select-provider" | "configure">("list");
   const [selectedProvider, setSelectedProvider] = useState<ProviderType | null>(null);
@@ -408,4 +408,4 @@ export function ConnectionManagerModal({ open, onOpenChange }: ConnectionManager
       </DialogContent>
     </Dialog>
   );
-}
+});

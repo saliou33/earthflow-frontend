@@ -1,9 +1,9 @@
 "use client";
 
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand, Database, Globe, Trash2, FileJson, Download, Upload, History, Copy, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { 
@@ -63,6 +63,16 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const nodeTypes = Object.keys(NODE_REGISTRY).reduce((acc, type) => {
   acc[type] = BaseNode;
@@ -93,6 +103,12 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     isSidebarOpen,
     isPropertiesOpen,
     isPropertiesExpanded,
+    isRenameDialogOpen,
+    isAssetModalOpen,
+    isConnectionModalOpen,
+    isHistoryDialogOpen,
+    isExecuting,
+    newNodeName,
     setNodes,
     setEdges,
     setWorkflowName,
@@ -100,9 +116,20 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     setIsSidebarOpen,
     setIsPropertiesOpen,
     setIsPropertiesExpanded,
+    setIsRenameDialogOpen,
+    setIsAssetModalOpen,
+    setIsConnectionModalOpen,
+    setIsHistoryDialogOpen,
+    setIsExecuting,
+    setNewNodeName,
+    nodeToDelete,
+    isClearExecutionsAlertOpen,
+    setNodeToDelete,
+    setIsClearExecutionsAlertOpen,
     onNodesChange,
     onEdgesChange,
     onConnect,
+    addNode,
     updateNodeData,
     deleteNode,
     duplicateNode,
@@ -113,12 +140,6 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
   } = useWorkflowStore();
 
   // Local UI state
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
-  const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
-  const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
-  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
-  const [newNodeName, setNewNodeName] = useState("");
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
 
   const { data: executionHistory, isLoading: isLoadingHistory } = useQuery({
@@ -194,7 +215,8 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     },
   });
 
-  const onExecute = async (nodeId?: string) => {
+  const onExecute = useCallback(async (nodeId?: string) => {
+    const { nodes, edges, workflowName, setIsExecuting, setExecutionResults, setLastExecutionAt, setIsDataPanelOpen } = useWorkflowStore.getState();
     setIsExecuting(true);
     try {
       // 1. Save current graph first
@@ -225,22 +247,23 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     } finally {
       setIsExecuting(false);
     }
-  };
+  }, [workflowId]);
 
-  const onClearExecutions = async () => {
-    if (!confirm("Clear all execution results for this workflow? (This will also delete them from the database)")) return;
+  const onClearExecutions = useCallback(async () => {
+    const state = useWorkflowStore.getState();
     try {
       await apiClient.delete(`v1/workflows/${workflowId}/executions`);
-      setExecutionResults(null);
-      setLastExecutionAt(null);
+      state.setExecutionResults(null);
+      state.setLastExecutionAt(null);
       toast.success("Execution history cleared successfully");
       queryClient.invalidateQueries({ queryKey: ["workflows", workflowId, "executions"] });
     } catch (error) {
       toast.error("Failed to clear execution history");
     }
-  };
+  }, [workflowId, queryClient]);
 
-  const onExportWorkflow = () => {
+  const onExportWorkflow = useCallback(() => {
+    const { nodes, edges, workflowName } = useWorkflowStore.getState();
     const data = {
       name: workflowName,
       graph: { nodes, edges }
@@ -253,9 +276,9 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Workflow exported as JSON");
-  };
+  }, []);
 
-  const onImportWorkflow = () => {
+  const onImportWorkflow = useCallback(() => {
      const input = document.createElement("input");
      input.type = "file";
      input.accept = ".json";
@@ -266,9 +289,10 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
          try {
            const data = JSON.parse(re.target.result);
            if (data.graph && data.graph.nodes) {
-             setNodes(data.graph.nodes);
-             setEdges(data.graph.edges || []);
-             setWorkflowName(data.name || workflowName);
+             const state = useWorkflowStore.getState();
+             state.setNodes(data.graph.nodes);
+             state.setEdges(data.graph.edges || []);
+             state.setWorkflowName(data.name || state.workflowName);
              toast.success("Workflow imported successfully");
            }
          } catch (err) {
@@ -278,23 +302,17 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
        reader.readAsText(file);
      };
      input.click();
-  };
+  }, []);
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNodeId(node.id);
     setIsPropertiesOpen(true);
   }, [setSelectedNodeId, setIsPropertiesOpen]);
 
-  const onRenameNode = useCallback(() => {
-    if (!selectedNodeId) return;
-    updateNodeData(selectedNodeId, { label: newNodeName });
-    setIsRenameDialogOpen(false);
-  }, [newNodeName, selectedNodeId, updateNodeData]);
-
-  const onDragStart = (event: React.DragEvent, nodeType: string) => {
+  const onDragStart = useCallback((event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
-  };
+  }, []);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -305,38 +323,31 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     (event: React.DragEvent) => {
       event.preventDefault();
 
-      const type = event.dataTransfer.getData('application/reactflow');
-      if (!type || !rfInstance) return;
+      const type = event.dataTransfer.getData("application/reactflow");
 
-      const position = rfInstance.screenToFlowPosition({
+      if (typeof type === "undefined" || !type) {
+        return;
+      }
+
+      const position = rfInstance?.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
-      });
+      }) || { x: 0, y: 0 };
 
-      const definition = NODE_REGISTRY[type];
-      const newNode: Node = {
-        id: `${type}-${Date.now()}`,
-        type,
-        position,
-        data: { 
-            label: definition.label 
-        },
-      };
-
-      setNodes([...nodes, newNode]);
+      const newNodeId = addNode(type, position);
+      setSelectedNodeId(newNodeId);
+      setIsPropertiesOpen(true);
     },
-    [rfInstance, nodes, setNodes]
+    [rfInstance, addNode, setSelectedNodeId, setIsPropertiesOpen]
   );
   
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
+    const state = useWorkflowStore.getState();
     updateWorkflow.mutate({
-      name: workflowName,
-      graph: {
-        nodes,
-        edges
-      }
+      name: state.workflowName,
+      graph: { nodes: state.nodes, edges: state.edges }
     });
-  };
+  }, [updateWorkflow]);
 
   const onZoomIn = useCallback(() => rfInstance?.zoomIn({ duration: 300 }), [rfInstance]);
   const onZoomOut = useCallback(() => rfInstance?.zoomOut({ duration: 300 }), [rfInstance]);
@@ -415,7 +426,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                             <ContextMenuItem onClick={() => duplicateNode(selectedNode.id)}>Duplicate</ContextMenuItem>
                             <ContextMenuItem onClick={() => setIsPropertiesOpen(true)}>Settings</ContextMenuItem>
                             <ContextMenuSeparator />
-                            <ContextMenuItem className="text-destructive" onClick={() => deleteNode(selectedNode.id)}>
+                            <ContextMenuItem className="text-destructive" onClick={() => setNodeToDelete(selectedNode.id)}>
                                 Delete Node
                             </ContextMenuItem>
                         </>
@@ -479,7 +490,16 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Cancel</Button>
-            <Button onClick={onRenameNode}>Save Changes</Button>
+            <Button 
+                onClick={() => {
+                    if (selectedNodeId) {
+                        updateNodeData(selectedNodeId, { label: newNodeName });
+                        setIsRenameDialogOpen(false);
+                    }
+                }}
+            >
+                Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -541,7 +561,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 font-bold">
               <DropdownMenuLabel className="text-[10px] uppercase tracking-widest opacity-50">Operations</DropdownMenuLabel>
-              <DropdownMenuItem onClick={onClearExecutions} className="text-destructive focus:text-destructive cursor-pointer">
+              <DropdownMenuItem onClick={() => setIsClearExecutionsAlertOpen(true)} className="text-destructive focus:text-destructive cursor-pointer">
                 <Trash2 className="mr-2 h-4 w-4" />
                 <span>Clear Executions</span>
               </DropdownMenuItem>
@@ -757,7 +777,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
           <DialogFooter className="p-6 pt-2 border-t bg-muted/10">
              <Button variant="outline" onClick={() => setIsHistoryDialogOpen(false)}>Close</Button>
              <Button variant="destructive" size="sm" onClick={() => {
-                 onClearExecutions();
+                 setIsClearExecutionsAlertOpen(true);
                  setIsHistoryDialogOpen(false);
              }}>Clear All</Button>
           </DialogFooter>
@@ -767,6 +787,49 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
       {/* Asset Manager Modal */}
       <AssetManagerModal open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen} />
       <ConnectionManagerModal open={isConnectionModalOpen} onOpenChange={setIsConnectionModalOpen} />
+
+      {/* Alert Dialogs */}
+      <AlertDialog open={!!nodeToDelete} onOpenChange={(open) => !open && setNodeToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the selected node from the workflow canvas. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                    if (nodeToDelete) deleteNode(nodeToDelete);
+                }}
+            >
+              Delete Node
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isClearExecutionsAlertOpen} onOpenChange={setIsClearExecutionsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Execution History?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the entire execution history for this workflow. This action cannot be undone and may affect analysis tracking.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={onClearExecutions}
+            >
+              Clear History
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

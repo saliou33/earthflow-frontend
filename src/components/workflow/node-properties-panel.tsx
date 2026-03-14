@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState, useMemo, useEffect, memo } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
@@ -37,7 +37,7 @@ interface NodePropertiesPanelProps {
   onUpdate: (nodeId: string, data: any) => void;
 }
 
-export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesPanelProps) {
+export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesPanelProps) {
   const definition = NODE_REGISTRY[node.type || ""];
   const { isPropertiesExpanded, setIsPropertiesExpanded } = useWorkflowStore();
 
@@ -366,5 +366,5 @@ export function NodePropertiesPanel({ node, onClose, onUpdate }: NodePropertiesP
       </form>
     </div>
   );
-}
+});
 

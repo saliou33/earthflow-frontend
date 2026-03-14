@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { 
   ChevronUp, 
   ChevronDown, 
@@ -22,7 +22,7 @@ import { apiClient } from "@/lib/api";
 import { DataTablePreview } from "../data/data-table";
 import { SpatialMapPreview } from "../data/spatial-map";
 
-export function DataPanel() {
+export const DataPanel = memo(function DataPanel() {
   const { 
     isDataPanelOpen, 
     setIsDataPanelOpen, 
@@ -280,7 +280,7 @@ export function DataPanel() {
       </div>
     </>
   );
-}
+});
 
 function TabButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
     return (

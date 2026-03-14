@@ -16,9 +16,18 @@ interface WorkflowState {
   edges: Edge[];
   selectedNodeId: string | null;
   workflowName: string;
+  // UI State
   isSidebarOpen: boolean;
   isPropertiesOpen: boolean;
   isPropertiesExpanded: boolean;
+  isRenameDialogOpen: boolean;
+  isAssetModalOpen: boolean;
+  isConnectionModalOpen: boolean;
+  isHistoryDialogOpen: boolean;
+  isExecuting: boolean;
+  newNodeName: string;
+  nodeToDelete: string | null;
+  isClearExecutionsAlertOpen: boolean;
   
   // Execution & UI Panels
   executionResults: Record<string, any> | null;
@@ -34,6 +43,15 @@ interface WorkflowState {
   setIsSidebarOpen: (open: boolean) => void;
   setIsPropertiesOpen: (open: boolean) => void;
   setIsPropertiesExpanded: (expanded: boolean) => void;
+  setIsRenameDialogOpen: (open: boolean) => void;
+  setIsAssetModalOpen: (open: boolean) => void;
+  setIsConnectionModalOpen: (open: boolean) => void;
+  setIsHistoryDialogOpen: (open: boolean) => void;
+  setIsExecuting: (executing: boolean) => void;
+  setNewNodeName: (name: string) => void;
+  setNodeToDelete: (id: string | null) => void;
+  setIsClearExecutionsAlertOpen: (open: boolean) => void;
+  
   setExecutionResults: (results: Record<string, any> | null) => void;
   setIsDataPanelOpen: (open: boolean) => void;
   setDataPanelHeight: (height: number) => void;
@@ -45,6 +63,7 @@ interface WorkflowState {
   onConnect: OnConnect;
   
   // Node Operations
+  addNode: (type: string, position: { x: number, y: number }, label?: string) => string;
   updateNodeData: (nodeId: string, data: any) => void;
   deleteNode: (nodeId: string) => void;
   duplicateNode: (nodeId: string) => void;
@@ -58,6 +77,14 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   isSidebarOpen: true,
   isPropertiesOpen: false,
   isPropertiesExpanded: false,
+  isRenameDialogOpen: false,
+  isAssetModalOpen: false,
+  isConnectionModalOpen: false,
+  isHistoryDialogOpen: false,
+  isExecuting: false,
+  newNodeName: "",
+  nodeToDelete: null,
+  isClearExecutionsAlertOpen: false,
   executionResults: null,
   lastExecutionAt: null,
   isDataPanelOpen: false,
@@ -70,6 +97,15 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   setIsSidebarOpen: (isSidebarOpen) => set({ isSidebarOpen }),
   setIsPropertiesOpen: (isPropertiesOpen) => set({ isPropertiesOpen }),
   setIsPropertiesExpanded: (isPropertiesExpanded) => set({ isPropertiesExpanded }),
+  setIsRenameDialogOpen: (isRenameDialogOpen) => set({ isRenameDialogOpen }),
+  setIsAssetModalOpen: (isAssetModalOpen) => set({ isAssetModalOpen }),
+  setIsConnectionModalOpen: (isConnectionModalOpen) => set({ isConnectionModalOpen }),
+  setIsHistoryDialogOpen: (isHistoryDialogOpen) => set({ isHistoryDialogOpen }),
+  setIsExecuting: (isExecuting) => set({ isExecuting }),
+  setNewNodeName: (newNodeName) => set({ newNodeName }),
+  setNodeToDelete: (nodeToDelete) => set({ nodeToDelete }),
+  setIsClearExecutionsAlertOpen: (isClearExecutionsAlertOpen) => set({ isClearExecutionsAlertOpen }),
+
   setExecutionResults: (executionResults) => set({ executionResults }),
   setIsDataPanelOpen: (isDataPanelOpen) => set({ isDataPanelOpen }),
   setDataPanelHeight: (dataPanelHeight) => set({ dataPanelHeight }),
@@ -106,6 +142,25 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     set({
       edges: addEdge(connection, get().edges),
     });
+  },
+
+  addNode: (type, position, label) => {
+    const newNode: Node = {
+      id: `${type}-${Date.now()}`,
+      type,
+      position,
+      data: { 
+          label: label || type 
+      },
+    };
+
+    set({
+      nodes: [...get().nodes, newNode],
+      selectedNodeId: newNode.id,
+      isPropertiesOpen: true,
+    });
+
+    return newNode.id;
   },
 
   updateNodeData: (nodeId, data) => {
