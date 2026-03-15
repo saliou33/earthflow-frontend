@@ -3,7 +3,18 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import Map, { Source, Layer, NavigationControl, FullscreenControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Maximize2, Minimize2, Layers, Palette, Info, Map as MapIcon, MousePointer2 } from "lucide-react";
+import { 
+  Maximize2, 
+  Minimize2, 
+  Layers, 
+  Palette, 
+  Info, 
+  Map as MapIcon, 
+  MousePointer2,
+  ChevronLeft,
+  ChevronRight,
+  X
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -14,6 +25,7 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface SpatialMapPreviewProps {
   asset?: any;
@@ -33,12 +45,22 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
     const [featureColor, setFeatureColor] = useState("#3b82f6");
     const [opacity, setOpacity] = useState(0.8);
     const [hoverInfo, setHoverInfo] = useState<{ x: number, y: number, longitude: number, latitude: number } | null>(null);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+    const [viewState, setViewState] = useState({
+        longitude: 0,
+        latitude: 0,
+        zoom: 1.5
+    });
 
     useEffect(() => {
         if (presignedUrl && asset?.asset_type === "VECTOR") {
             fetch(presignedUrl)
                 .then(res => res.json())
-                .then(data => setGeoJson(data))
+                .then(data => {
+                    setGeoJson(data);
+                    // Reset selected index when new data arrives
+                    setSelectedIndex(-1);
+                })
                 .catch(err => console.error("Failed to fetch asset for map:", err));
         }
     }, [presignedUrl, asset?.asset_type]);
@@ -53,10 +75,45 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
         }
     }, []);
 
-    return (
+    const zoomToFeature = useCallback((index: number) => {
+        if (!geoJson?.features?.[index]) return;
+        const feature = geoJson.features[index];
+        
+        let lon: number | undefined, lat: number | undefined;
+        if (feature.geometry.type === "Point") {
+            [lon, lat] = feature.geometry.coordinates;
+        } else if (feature.geometry.type === "Polygon") {
+            const coords = feature.geometry.coordinates[0];
+            lon = coords.reduce((sum: number, c: [number, number]) => sum + c[0], 0) / coords.length;
+            lat = coords.reduce((sum: number, c: [number, number]) => sum + c[1], 0) / coords.length;
+        }
+
+        if (lon !== undefined && lat !== undefined) {
+            setViewState(prev => ({
+                ...prev,
+                longitude: lon,
+                latitude: lat,
+                zoom: Math.max(prev.zoom, 10),
+                transitionDuration: 500
+            }));
+        }
+    }, [geoJson]);
+
+    const navigateFeature = useCallback((dir: number) => {
+        if (!geoJson?.features?.length) return;
+        
+        const nextIndex = selectedIndex === -1 
+            ? (dir > 0 ? 0 : geoJson.features.length - 1)
+            : (selectedIndex + dir + geoJson.features.length) % geoJson.features.length;
+        
+        setSelectedIndex(nextIndex);
+        zoomToFeature(nextIndex);
+    }, [geoJson, selectedIndex, zoomToFeature]);
+
+    const MapContent = (isFull: boolean) => (
         <div className={cn(
-            "relative rounded-2xl overflow-hidden border-2 border-primary/10 shadow-2xl transition-all duration-500 bg-black group/map",
-            isMaximized ? "fixed inset-4 z-50 bg-background border-primary shadow-3xl" : "h-[450px]"
+            "relative overflow-hidden group/map",
+            isFull ? "w-full h-full rounded-none" : "h-[450px] rounded-2xl border-2 border-primary/10 shadow-2xl transition-all duration-500 bg-black"
         )}
         onMouseLeave={() => setHoverInfo(null)}
         >
@@ -74,6 +131,11 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                             <span>{geoJson.features?.length || 0} Features</span>
                         </div>
                     )}
+                    {selectedIndex !== -1 && geoJson && (
+                        <div className="pt-1 border-t border-primary/10 text-primary font-bold">
+                            Focus: {selectedIndex + 1} of {geoJson.features.length}
+                        </div>
+                    )}
                 </div>
 
                 {hoverInfo && (
@@ -88,7 +150,28 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                 )}
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2">
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                {geoJson?.features?.length > 0 && (
+                    <div className="flex items-center bg-background/80 backdrop-blur-md rounded-xl border border-primary/20 p-1 shadow-lg">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="size-7 rounded-lg hover:bg-primary/10"
+                            onClick={() => navigateFeature(-1)}
+                        >
+                            <ChevronLeft className="size-4" />
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="size-7 rounded-lg hover:bg-primary/10"
+                            onClick={() => navigateFeature(1)}
+                        >
+                            <ChevronRight className="size-4" />
+                        </Button>
+                    </div>
+                )}
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="secondary" size="sm" className="h-9 px-3 gap-2 bg-background/80 backdrop-blur-md border shadow-lg border-primary/20 hover:border-primary/50 transition-all">
@@ -148,22 +231,30 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button 
-                    variant="secondary" 
-                    size="icon" 
-                    className="size-9 bg-background/80 backdrop-blur-md border shadow-lg border-primary/20 hover:border-primary/50 transition-all"
-                    onClick={() => setIsMaximized(!isMaximized)}
-                >
-                    {isMaximized ? <Minimize2 className="size-4 text-primary" /> : <Maximize2 className="size-4 text-primary" />}
-                </Button>
+                {!isFull ? (
+                    <Button 
+                        variant="secondary" 
+                        size="icon" 
+                        className="size-9 bg-background/80 backdrop-blur-md border shadow-lg border-primary/20 hover:border-primary/50 transition-all"
+                        onClick={() => setIsMaximized(true)}
+                    >
+                        <Maximize2 className="size-4 text-primary" />
+                    </Button>
+                ) : (
+                    <Button 
+                        variant="secondary" 
+                        size="icon" 
+                        className="size-9 bg-background/80 backdrop-blur-md border shadow-lg border-primary/20 hover:border-primary/50 transition-all hover:bg-destructive/10 hover:text-destructive group"
+                        onClick={() => setIsMaximized(false)}
+                    >
+                        <X className="size-4 group-hover:scale-110 transition-transform" />
+                    </Button>
+                )}
             </div>
 
             <Map
-                initialViewState={{
-                    longitude: 0,
-                    latitude: 0,
-                    zoom: 1.5
-                }}
+                {...viewState}
+                onMove={evt => setViewState(evt.viewState)}
                 style={{ width: '100%', height: '100%' }}
                 mapStyle={mapStyle}
                 onMouseMove={onHover}
@@ -225,7 +316,22 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                     <span className="text-[9px] font-black uppercase tracking-widest text-primary/80">Interactive Canvas</span>
                  </div>
             </div>
-
         </div>
+    );
+
+    return (
+        <>
+            {MapContent(false)}
+
+            <Dialog open={isMaximized} onOpenChange={setIsMaximized}>
+                <DialogContent className="max-w-[95vw] sm:max-w-[95vw] w-[95vw] h-[90vh] p-0 overflow-hidden border-none shadow-2xl rounded-2xl" showCloseButton={false}>
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Map Fullscreen Preview</DialogTitle>
+                        <DialogDescription>Interactive map for viewing captured spatial data in full screen.</DialogDescription>
+                    </DialogHeader>
+                    {MapContent(true)}
+                </DialogContent>
+            </Dialog>
+        </>
     );
 });

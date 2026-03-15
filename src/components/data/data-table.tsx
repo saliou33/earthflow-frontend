@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, memo } from "react";
-import { Database, Maximize2, Minimize2, Terminal, Download, Filter } from "lucide-react";
+import { Database, Maximize2, Minimize2, Terminal, Download, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface DataTablePreviewProps {
   asset: any;
@@ -38,10 +39,10 @@ export const DataTablePreview = memo(function DataTablePreview({ asset, presigne
         );
     }
 
-    return (
+    const TableContent = (isFull: boolean) => (
         <div className={cn(
             "flex flex-col space-y-4 transition-all duration-300",
-            isMaximized ? "fixed inset-4 z-50 bg-background border-primary shadow-3xl" : "h-[450px]"
+            isFull ? "w-full h-full p-8 bg-background" : "h-[450px]"
         )}>
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -65,20 +66,31 @@ export const DataTablePreview = memo(function DataTablePreview({ asset, presigne
                         <Download className="size-3" />
                         Export
                     </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="size-8 rounded-lg hover:bg-muted" 
-                        onClick={() => setIsMaximized(!isMaximized)}
-                    >
-                        {isMaximized ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-                    </Button>
+                    {!isFull ? (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="size-8 rounded-lg hover:bg-muted" 
+                            onClick={() => setIsMaximized(true)}
+                        >
+                            <Maximize2 className="size-4" />
+                        </Button>
+                    ) : (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="size-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors group" 
+                            onClick={() => setIsMaximized(false)}
+                        >
+                            <X className="size-4 group-hover:scale-110 transition-transform" />
+                        </Button>
+                    )}
                 </div>
             </div>
             
             <div className={cn(
                 "border rounded-xl overflow-hidden bg-muted/10 shadow-sm flex flex-col relative",
-                isMaximized ? "flex-1" : "min-h-[200px]"
+                (isFull || isMaximized) ? "flex-1" : "min-h-[200px]"
             )}>
                 <div className="p-3 bg-muted/30 border-b flex items-center justify-between backdrop-blur-sm">
                     <span className="text-[10px] font-black uppercase tracking-widest opacity-50">Preview Rows</span>
@@ -124,12 +136,28 @@ export const DataTablePreview = memo(function DataTablePreview({ asset, presigne
                 )}
             </div>
             
-            {isMaximized && (
+            {(isFull || isMaximized) && (
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground pt-2 border-t">
                     <span>Showing first 50 features for performance</span>
                     <span className="bg-primary/10 text-primary px-2 py-0.5 rounded italic">Full-Screen Mode</span>
                 </div>
             )}
         </div>
+    );
+
+    return (
+        <>
+            {TableContent(false)}
+
+            <Dialog open={isMaximized} onOpenChange={setIsMaximized}>
+                <DialogContent className="max-w-[95vw] sm:max-w-[95vw] w-[95vw] h-[90vh] p-0 overflow-hidden border-none shadow-2xl rounded-2xl" showCloseButton={false}>
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Data Table Fullscreen Preview</DialogTitle>
+                        <DialogDescription>Viewing asset property data in comprehensive table view.</DialogDescription>
+                    </DialogHeader>
+                    {TableContent(true)}
+                </DialogContent>
+            </Dialog>
+        </>
     );
 });
