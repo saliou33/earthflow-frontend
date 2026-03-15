@@ -46,6 +46,7 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
     const [opacity, setOpacity] = useState(0.8);
     const [hoverInfo, setHoverInfo] = useState<{ x: number, y: number, longitude: number, latitude: number } | null>(null);
     const [selectedIndex, setSelectedIndex] = useState(-1);
+    const [tileUrlTemplate, setTileUrlTemplate] = useState<string | null>(null);
     const [viewState, setViewState] = useState({
         longitude: 0,
         latitude: 0,
@@ -62,8 +63,23 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                     setSelectedIndex(-1);
                 })
                 .catch(err => console.error("Failed to fetch asset for map:", err));
+        } else if (asset?.asset_type === "RASTER") {
+            // Clear vector data
+            setGeoJson(null);
+            // Fetch the tiling endpoint
+            fetch(`${process.env.NEXT_PUBLIC_API_URL || "/api"}/v1/assets/${asset.id}/tile-url`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.url_template) {
+                        setTileUrlTemplate(data.url_template);
+                    }
+                })
+                .catch(err => console.error("Failed to fetch tile-url:", err));
+        } else {
+            setGeoJson(null);
+            setTileUrlTemplate(null);
         }
-    }, [presignedUrl, asset?.asset_type]);
+    }, [presignedUrl, asset?.asset_type, asset?.id]);
 
     const onHover = useCallback((event: any) => {
         const {
@@ -293,6 +309,23 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                                 'fill-outline-color': '#fff'
                             }}
                             filter={['==', '$type', 'Polygon']}
+                        />
+                    </Source>
+                )}
+
+                {tileUrlTemplate && (
+                    <Source 
+                        id="earthflow-raster-tiles" 
+                        type="raster" 
+                        tiles={[tileUrlTemplate]} 
+                        tileSize={256}
+                    >
+                        <Layer
+                            id="raster-layer"
+                            type="raster"
+                            paint={{
+                                'raster-opacity': opacity
+                            }}
                         />
                     </Source>
                 )}
