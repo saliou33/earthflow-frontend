@@ -30,7 +30,8 @@ import { apiClient } from "@/lib/api";
 
 interface SpatialMapPreviewProps {
   asset?: any;
-  presignedUrl?: string;
+  presignedUrl?: string | null;
+  fullHeight?: boolean;
 }
 
 const MAP_STYLES = [
@@ -39,7 +40,7 @@ const MAP_STYLES = [
   { id: "voyager", label: "Voyager", url: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json" },
 ];
 
-export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presignedUrl }: SpatialMapPreviewProps) {
+export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presignedUrl, fullHeight }: SpatialMapPreviewProps) {
     const [geoJson, setGeoJson] = useState<any>(null);
     const [isMaximized, setIsMaximized] = useState(false);
     const [mapStyle, setMapStyle] = useState(MAP_STYLES[0].url);
@@ -72,6 +73,24 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                 .then(res => {
                     if (res.data.url_template) {
                         setTileUrlTemplate(res.data.url_template);
+                        
+                        // Extract titiler base from template to fetch metadata
+                        const titilerBase = res.data.url_template.split('/tiles/')[0];
+                        const infoUrl = `${titilerBase}/cog/info?url=${asset.storage_uri}`;
+                        
+                        fetch(infoUrl)
+                            .then(r => r.json())
+                            .then(info => {
+                                if (info.center) {
+                                    setViewState(prev => ({
+                                        ...prev,
+                                        longitude: info.center[0],
+                                        latitude: info.center[1],
+                                        zoom: Math.max(info.minzoom || 2, 8) // Zoom in to see the data
+                                    }));
+                                }
+                            })
+                            .catch(e => console.error("Failed to fetch raster info for auto-zoom:", e));
                     }
                 })
                 .catch(err => console.error("Failed to fetch asset URL:", err));
@@ -128,7 +147,7 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
     const MapContent = (isFull: boolean) => (
         <div className={cn(
             "relative overflow-hidden group/map",
-            isFull ? "w-full h-full rounded-none" : "h-[450px] rounded-2xl border-2 border-primary/10 shadow-2xl transition-all duration-500 bg-black"
+            (isFull || fullHeight) ? "w-full h-full rounded-none" : "h-[450px] rounded-2xl border-2 border-primary/10 shadow-2xl transition-all duration-500 bg-black"
         )}
         onMouseLeave={() => setHoverInfo(null)}
         >
@@ -352,18 +371,20 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
     );
 
     return (
-        <>
+        <div className={fullHeight ? "h-full w-full" : ""}>
             {MapContent(false)}
 
-            <Dialog open={isMaximized} onOpenChange={setIsMaximized}>
-                <DialogContent className="max-w-[95vw] sm:max-w-[95vw] w-[95vw] h-[90vh] p-0 overflow-hidden border-none shadow-2xl rounded-2xl" showCloseButton={false}>
-                    <DialogHeader className="sr-only">
-                        <DialogTitle>Map Fullscreen Preview</DialogTitle>
-                        <DialogDescription>Interactive map for viewing captured spatial data in full screen.</DialogDescription>
-                    </DialogHeader>
-                    {MapContent(true)}
-                </DialogContent>
-            </Dialog>
-        </>
+            {!fullHeight && (
+                <Dialog open={isMaximized} onOpenChange={setIsMaximized}>
+                    <DialogContent className="max-w-[95vw] sm:max-w-[95vw] w-[95vw] h-[90vh] p-0 overflow-hidden border-none shadow-2xl rounded-2xl" showCloseButton={false}>
+                        <DialogHeader className="sr-only">
+                            <DialogTitle>Map Fullscreen Preview</DialogTitle>
+                            <DialogDescription>Interactive map for viewing captured spatial data in full screen.</DialogDescription>
+                        </DialogHeader>
+                        {MapContent(true)}
+                    </DialogContent>
+                </Dialog>
+            )}
+        </div>
     );
 });
