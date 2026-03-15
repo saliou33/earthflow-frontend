@@ -143,6 +143,14 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
   // Local UI state
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const [nodeSearchQuery, setNodeSearchQuery] = useState("");
+  const [openCategories, setOpenCategories] = useState<string[]>(NODE_CATEGORIES.map(c => c.id));
+
+  // Auto-expand all categories when searching
+  useEffect(() => {
+    if (nodeSearchQuery) {
+        setOpenCategories(NODE_CATEGORIES.map(c => c.id));
+    }
+  }, [nodeSearchQuery]);
 
   const { data: executionHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ["workflows", workflowId, "executions"],
@@ -683,8 +691,14 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
              />
           </div>
         </div>
-        <div className="flex-1 overflow-auto p-2">
-          <Accordion type="multiple" defaultValue={NODE_CATEGORIES.map(c => c.id)} className="w-full space-y-2">
+        <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-muted-foreground/20">
+          <Accordion 
+            key={nodeSearchQuery ? "searching" : "browsing"}
+            type="multiple" 
+            value={openCategories}
+            onValueChange={setOpenCategories} 
+            className="w-full space-y-2"
+          >
             {NODE_CATEGORIES.map((cat) => {
               const filteredNodes = Object.values(NODE_REGISTRY)
                 .filter(node => node.category === cat.id && (
@@ -742,7 +756,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-semibold truncate">{node.label}</div>
-                          <div className="text-[10px] text-muted-foreground line-clamp-2 leading-tight h-[24px]">
+                          <div className="text-[10px] text-muted-foreground line-clamp-2 leading-tight">
                             {node.description}
                           </div>
                         </div>

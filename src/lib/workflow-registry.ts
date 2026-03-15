@@ -76,7 +76,7 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
   "source.wfs": { type: "source.wfs", label: "WFS Layer", description: "Load WFS features", category: "io", icon: Map, color: "blue", outputs: 1, mainParameter: "url", parameters: [{ id: "url", label: "Service URL", type: "text", required: true }, { id: "typename", label: "Type Name", type: "text" }] },
   "io.draw": { 
     type: "io.draw", 
-    label: "Draw Data", 
+    label: "Draw", 
     description: "Interactive geometry drawing", 
     category: "io", 
     icon: Scissors, 
