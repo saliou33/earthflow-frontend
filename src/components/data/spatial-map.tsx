@@ -67,14 +67,14 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
         } else if (asset?.asset_type === "RASTER") {
             // Clear vector data
             setGeoJson(null);
-            // Fetch the tiling endpoint
-            apiClient.get(`v1/assets/${asset.id}/tile-url`)
+            // Fetch the unified URL endpoint
+            apiClient.get(`v1/assets/${asset.id}/url`)
                 .then(res => {
                     if (res.data.url_template) {
                         setTileUrlTemplate(res.data.url_template);
                     }
                 })
-                .catch(err => console.error("Failed to fetch tile-url:", err));
+                .catch(err => console.error("Failed to fetch asset URL:", err));
         } else {
             setGeoJson(null);
             setTileUrlTemplate(null);

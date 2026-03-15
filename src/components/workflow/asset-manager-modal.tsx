@@ -401,61 +401,81 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
             </DialogContent>
         </Dialog>
 
-        {/* Fullscreen Preview Overlay */}
+        {/* Immersive Fullscreen Preview Overlay */}
         <Dialog open={!!previewAsset} onOpenChange={(open) => !open && setPreviewAsset(null)}>
-          <DialogContent className="max-w-[98vw]! sm:max-w-[98vw]! w-[98vw]! h-[96vh]! p-0! flex! flex-col! bg-background/95 backdrop-blur-xl border-primary/20 shadow-2xl overflow-hidden rounded-3xl">
-            <DialogHeader className="px-8 py-6 border-b shrink-0 bg-muted/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
-                    <Layout className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <DialogTitle className="text-2xl font-black tracking-tight uppercase flex items-center gap-3">
-                      Asset Inspection 
-                      <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full border border-primary/10 tracking-widest font-black italic">
-                        {previewAsset?.asset_type}
+          <DialogContent className="max-w-[100vw]! md:max-w-[100vw]! w-full! h-full! p-0! flex! flex-col! bg-black border-none shadow-none overflow-hidden rounded-none" showCloseButton={false}>
+            <div className="relative flex-1 flex flex-col overflow-hidden">
+              
+              {/* Floating Minimal Header (Glassmorphism) */}
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-6 px-6 py-2.5 rounded-2xl bg-black/40 backdrop-blur-2xl border border-white/10 shadow-2xl transition-all hover:bg-black/50 hover:border-white/20">
+                <div className="flex items-center gap-3 pr-4 border-r border-white/10">
+                   <div className="size-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
+                      <Layout className="h-4 w-4 text-primary" />
+                   </div>
+                   <div className="flex flex-col">
+                      <h3 className="text-[11px] font-black uppercase tracking-widest text-white leading-none">
+                        {previewAsset?.name}
+                      </h3>
+                      <span className="text-[9px] text-white/40 font-bold uppercase tracking-tighter">
+                        {previewAsset?.asset_type} • EarthFlow Data Platform
                       </span>
-                    </DialogTitle>
-                    <DialogDescription className="font-bold text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      {previewAsset?.name} • {previewAsset?.storage_uri}
-                    </DialogDescription>
-                  </div>
+                   </div>
                 </div>
+
+                <Tabs defaultValue="preview" className="flex items-center">
+                  <TabsList className="bg-transparent h-8 p-0 gap-1">
+                    <TabsTrigger 
+                      value="preview" 
+                      className="h-8 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+                    >
+                      Map
+                    </TabsTrigger>
+                    {previewAsset?.asset_type === "VECTOR" && (
+                      <TabsTrigger 
+                        value="data" 
+                        className="h-8 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+                      >
+                        Table
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+                  
+                  <div className="flex-1 rounded-none overflow-hidden h-full w-full absolute inset-0 -z-10 pointer-events-none">
+                     {/* This hidden div ensures tabs work with the content below via default value */}
+                  </div>
+                </Tabs>
+
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="size-10 rounded-xl hover:bg-destructive/10 hover:text-destructive group"
+                  className="size-8 rounded-xl hover:bg-white/10 text-white group"
                   onClick={() => setPreviewAsset(null)}
                 >
-                  <X className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                  <X className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                 </Button>
               </div>
-            </DialogHeader>
 
-            <div className="flex-1 overflow-hidden p-8">
-              <Tabs defaultValue="preview" className="h-full flex flex-col gap-6">
-                <TabsList className="w-max bg-muted/40 p-1.5 rounded-2xl border border-primary/10 h-12 shadow-inner">
-                  <TabsTrigger value="preview" className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg font-bold tracking-tight">
-                    Spatial Preview
-                  </TabsTrigger>
-                  {previewAsset?.asset_type === "VECTOR" && (
-                    <TabsTrigger value="data" className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg font-bold tracking-tight">
-                      Attribute Table
-                    </TabsTrigger>
-                  )}
-                </TabsList>
-                <div className="flex-1 rounded-3xl border-2 border-primary/10 overflow-hidden shadow-2xl relative bg-black/5 p-4">
+              {/* Edge-to-Edge Content Area */}
+              <div className="flex-1 w-full h-full relative">
+                 <Tabs defaultValue="preview" className="h-full w-full">
+                    {/* Re-declaring Tabs here to scope the content properly if needed, or simply use shared state if complex */}
                     <TabsContent value="preview" className="m-0 h-full w-full">
                        <SpatialMapPreview asset={previewAsset} presignedUrl={previewUrl} />
                     </TabsContent>
                     {previewAsset?.asset_type === "VECTOR" && (
-                    <TabsContent value="data" className="m-0 h-full w-full overflow-auto">
+                    <TabsContent value="data" className="m-0 h-full w-full bg-background pt-24 px-8 pb-8">
                         <DataTablePreview asset={previewAsset} presignedUrl={previewUrl} />
                     </TabsContent>
                     )}
-                </div>
-              </Tabs>
+                 </Tabs>
+              </div>
+
+              {/* Subtle Footer Meta */}
+              <div className="absolute bottom-6 left-6 z-[100] px-3 py-1.5 rounded-lg bg-black/40 backdrop-blur-xl border border-white/5 pointer-events-none">
+                 <span className="text-[9px] font-mono text-white/30 uppercase tracking-[0.2em]">
+                   Secure S3 Stream • {previewAsset?.storage_uri}
+                 </span>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
