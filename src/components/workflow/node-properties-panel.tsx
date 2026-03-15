@@ -193,13 +193,21 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
                   )}
 
                   {param.type === "number" && (
-                    <Input
-                      id={param.id}
-                      type="number"
-                      {...register(param.id, { valueAsNumber: true })}
-                      placeholder={param.placeholder}
-                      className={cn("h-8 text-sm", errors[param.id] && "border-destructive")}
-                    />
+                    <AutocompleteHelper 
+                      onSelect={(suggestion) => {
+                        const current = String(watch(param.id) ?? "");
+                        setValue(param.id, current + suggestion, { shouldDirty: true });
+                      }}
+                      context="expression"
+                    >
+                      <Input
+                        id={param.id}
+                        type="text"
+                        {...register(param.id)}
+                        placeholder={param.placeholder}
+                        className={cn("h-8 text-sm", errors[param.id] && "border-destructive")}
+                      />
+                    </AutocompleteHelper>
                   )}
 
                   {param.type === "select" && (
@@ -249,12 +257,27 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({ node, onC
 
                   {param.type === "range" && (
                     <div className="space-y-2 pt-1">
+                      <AutocompleteHelper 
+                        onSelect={(suggestion) => {
+                          const current = String(watch(param.id) ?? "");
+                          setValue(param.id, current + suggestion, { shouldDirty: true });
+                        }}
+                        context="expression"
+                      >
+                        <Input
+                          id={param.id}
+                          type="text"
+                          {...register(param.id)}
+                          placeholder={param.placeholder}
+                          className={cn("h-8 text-[10px] font-mono", errors[param.id] && "border-destructive")}
+                        />
+                      </AutocompleteHelper>
                       <input
                         type="range"
                         min={param.min ?? 0}
                         max={param.max ?? 100}
                         step={param.step ?? 1}
-                        value={Number(value ?? param.default ?? 0)}
+                        value={!isNaN(parseFloat(String(value))) ? parseFloat(String(value)) : (param.min ?? 0)}
                         onChange={(e) => setValue(param.id, parseFloat(e.target.value), { shouldDirty: true })}
                         className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
                       />

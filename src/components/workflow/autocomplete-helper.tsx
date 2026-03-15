@@ -127,7 +127,6 @@ export function AutocompleteHelper({ children, onSelect, context = "text" }: Aut
                     placeholder="Search logic..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    autoFocus
                 />
             </div>
             
