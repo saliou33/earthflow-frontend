@@ -58,26 +58,57 @@ export const DataPanel = memo(function DataPanel() {
 
   const lastAutoSelectExecution = useRef<string | null>(null);
 
-  // Auto-select node ONLY when a new execution completes
+  // Auto-select node ONLY when a new execution completes or when panel is opened with results but no selection
   useEffect(() => {
-    if (executionResults && lastExecutionAt && lastExecutionAt !== lastAutoSelectExecution.current) {
+    if (!executionResults) return;
+
+    const nodeIds = Object.keys(executionResults);
+    if (nodeIds.length === 0) return;
+
+    // Case 1: New execution completed
+    if (lastExecutionAt && lastExecutionAt !== lastAutoSelectExecution.current) {
       lastAutoSelectExecution.current = lastExecutionAt;
-      
-      const nodeIds = Object.keys(executionResults);
       const lastNodeId = nodeIds[nodeIds.length - 1];
       if (lastNodeId) {
         useWorkflowStore.getState().setSelectedNodeId(lastNodeId);
-        // Explicitly open data panel if results arrived
         setIsDataPanelOpen(true);
       }
+    } 
+    // Case 2: Panel opened manually but no node selected, and results exist
+    else if (isDataPanelOpen && !selectedNodeId) {
+      const firstNodeId = nodeIds[0];
+      if (firstNodeId) {
+        useWorkflowStore.getState().setSelectedNodeId(firstNodeId);
+      }
     }
-  }, [executionResults, lastExecutionAt, setIsDataPanelOpen]);
+  }, [executionResults, lastExecutionAt, setIsDataPanelOpen, isDataPanelOpen, selectedNodeId]);
+
+  // Safety cleanup: If we have a selectedNodeId but the node is gone from the graph
+  useEffect(() => {
+    if (selectedNodeId && !selectedNode && nodes.length > 0) {
+      // Small delay to avoid race conditions during batch updates
+      const timer = setTimeout(() => {
+        if (!nodes.find(n => n.id === selectedNodeId)) {
+          useWorkflowStore.getState().setSelectedNodeId(null);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedNodeId, selectedNode, nodes]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     isResizing.current = true;
     lastY.current = e.clientY;
     document.body.style.cursor = "ns-resize";
   }, []);
+
+  // Close panel if results are cleared
+  useEffect(() => {
+    if (executionResults === null && isDataPanelOpen) {
+      setIsDataPanelOpen(false);
+      useWorkflowStore.getState().setSelectedNodeId(null);
+    }
+  }, [executionResults, isDataPanelOpen, setIsDataPanelOpen]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -146,7 +177,7 @@ export const DataPanel = memo(function DataPanel() {
           <div className="flex items-center space-x-6">
             <div className="flex items-center gap-2">
                <div className="size-2 rounded-full bg-primary animate-pulse" />
-               <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground/80">Workflow Output</h3>
+               <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground/80">Results Explorer</h3>
             </div>
             
             <Separator orientation="vertical" className="h-4" />
@@ -211,14 +242,14 @@ export const DataPanel = memo(function DataPanel() {
 
           {/* Main Result View */}
           <div className="flex-1 overflow-auto bg-black/2 dark:bg-white/2 p-8">
-              {!executionResults ? (
+              {!executionResults || Object.keys(executionResults).length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center space-y-4 text-muted-foreground/40">
-                      <div className="size-20 rounded-3xl border-2 border-dashed border-muted-foreground/10 flex items-center justify-center shadow-inner">
-                           <Terminal className="size-10 opacity-20" />
-                      </div>
-                      <p className="text-xs font-black uppercase tracking-[0.2em]">Awaiting Execution...</p>
-                  </div>
-              ) : selectedNodeId ? (
+                       <div className="size-20 rounded-3xl border-2 border-dashed border-muted-foreground/10 flex items-center justify-center shadow-inner">
+                            <Terminal className="size-10 opacity-20" />
+                       </div>
+                       <p className="text-xs font-black uppercase tracking-[0.2em]">Run workflow to see results</p>
+                   </div>
+              ) : selectedNodeId && selectedNode ? (
                   <div className="space-y-8 max-w-6xl mx-auto">
                       {/* Premium Tabs */}
                       <div className="flex bg-muted/30 p-1.5 rounded-2xl border border-primary/10 w-fit backdrop-blur-xl">
@@ -246,17 +277,18 @@ export const DataPanel = memo(function DataPanel() {
                           <div className="space-y-1.5">
                               <h4 className="text-2xl font-black tracking-tighter text-foreground/90">
                                 {(() => {
-                                  if (!selectedNode) return "Untitled Source";
+                                  if (!selectedNode) return "Unknown Node";
                                   const data = selectedNode.data as any;
                                   if (data.label) return data.label;
                                   
                                   const definition = selectedNode.type ? NODE_REGISTRY[selectedNode.type] : undefined;
                                   if (definition?.mainParameter) {
                                     const paramName = definition.mainParameter;
-                                    return data[`_${paramName}Name`] || data[paramName] || definition.label;
+                                    const val = data[`_${paramName}Name`] || data[paramName];
+                                    if (val) return val;
                                   }
                                   
-                                  return definition?.label || selectedNode.type || "Untitled Source";
+                                  return definition?.label || selectedNode.type || "Untitled Node";
                                 })()}
                               </h4>
                               <div className="flex items-center gap-2">

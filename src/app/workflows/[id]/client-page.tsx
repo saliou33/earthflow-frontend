@@ -134,6 +134,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
     deleteNode,
     deleteEdge,
     duplicateNode,
+    clearCanvas,
     executionResults,
     setExecutionResults,
     setLastExecutionAt,
@@ -265,6 +266,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
       await apiClient.delete(`v1/workflows/${workflowId}/executions`);
       state.setExecutionResults(null);
       state.setLastExecutionAt(null);
+      state.setIsDataPanelOpen(false);
       toast.success("Execution history cleared successfully");
       queryClient.invalidateQueries({ queryKey: ["workflows", workflowId, "executions"] });
     } catch (error) {
@@ -458,7 +460,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                     ) : (
                         <>
                             <ContextMenuLabel>Canvas Actions</ContextMenuLabel>
-                            <ContextMenuItem onClick={() => setNodes([])}>Clear Canvas</ContextMenuItem>
+                            <ContextMenuItem onClick={() => clearCanvas()}>Clear Canvas</ContextMenuItem>
                             <ContextMenuSeparator />
                             <ContextMenuItem onClick={() => rfInstance?.fitView()}>Fit View</ContextMenuItem>
                         </>

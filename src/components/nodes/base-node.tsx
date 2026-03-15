@@ -94,16 +94,36 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
           <AlertCircle className="size-3 text-white animate-pulse" />
         </div>
       )}
-      {/* Target Handle: Unified 'input' port */}
-      {definition.inputs !== undefined && definition.inputs > 0 && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          id="input"
-          style={{ top: '50%' }}
-          className={cn("w-3 h-3 border-2 border-background", handleColor)}
-        />
-      )}
+      {/* Target Handles */}
+      {(() => {
+        if (!definition.inputs) return null;
+        const inputs = Array.isArray(definition.inputs) 
+          ? definition.inputs 
+          : Array.from({ length: definition.inputs }, (_, i) => i === 0 ? "input" : String(i));
+
+        return inputs.map((inputId, index) => {
+          const top = inputs.length === 1 ? "50%" : `${20 + (index * 60) / (inputs.length - 1)}%`;
+          return (
+            <div key={inputId} className="group/handle">
+              <Handle
+                type="target"
+                position={Position.Left}
+                id={inputId}
+                style={{ top }}
+                className={cn("w-3 h-3 border-2 border-background", handleColor)}
+              />
+              {inputs.length > 1 && (
+                <div 
+                  className="absolute left-4 text-[8px] font-black uppercase text-muted-foreground/40 tracking-tighter"
+                  style={{ top, transform: 'translateY(-50%)' }}
+                >
+                  {inputId}
+                </div>
+              )}
+            </div>
+          );
+        });
+      })()}
 
       <div className={cn("p-2 flex items-center justify-between border-b border-current/20 rounded-t-[10px]", colorClass)}>
         <div className="flex items-center space-x-2">
@@ -118,16 +138,36 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
         </span>
       </div>
 
-      {/* Source Handle: Unified 'output' port */}
-      {definition.outputs !== undefined && definition.outputs > 0 && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="output"
-          style={{ top: '50%' }}
-          className={cn("w-3 h-3 border-2 border-background", handleColor)}
-        />
-      )}
+      {/* Source Handles */}
+      {(() => {
+        if (!definition.outputs) return null;
+        const outputs = Array.isArray(definition.outputs) 
+          ? definition.outputs 
+          : Array.from({ length: definition.outputs }, (_, i) => i === 0 ? "output" : String(i));
+
+        return outputs.map((outputId, index) => {
+          const top = outputs.length === 1 ? "50%" : `${20 + (index * 60) / (outputs.length - 1)}%`;
+          return (
+            <div key={outputId} className="group/handle">
+              <Handle
+                type="source"
+                position={Position.Right}
+                id={outputId}
+                style={{ top }}
+                className={cn("w-3 h-3 border-2 border-background", handleColor)}
+              />
+              {outputs.length > 1 && (
+                <div 
+                  className="absolute right-4 text-[8px] font-black uppercase text-muted-foreground/40 tracking-tighter"
+                  style={{ top, transform: 'translateY(-50%)' }}
+                >
+                  {outputId}
+                </div>
+              )}
+            </div>
+          );
+        });
+      })()}
     </div>
   );
 }

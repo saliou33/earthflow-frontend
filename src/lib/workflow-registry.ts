@@ -27,8 +27,8 @@ export interface NodeDefinition {
   category: NodeCategory;
   icon: LucideIcon;
   color: string;
-  inputs?: number;
-  outputs?: number;
+  inputs?: number | string[];
+  outputs?: number | string[];
   parameters?: NodeParameter[];
   mainParameter?: string;
 }
@@ -171,16 +171,16 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
   "vector.reproject": { type: "vector.reproject", label: "Reproject", description: "Change CRS", category: "geometry", icon: RefreshCcw, color: "orange", inputs: 1, outputs: 1, parameters: [{ id: "target_crs", label: "Target EPSG", type: "text", default: "4326" }] },
 
   // --- RASTER CATEGORY ---
-  "raster.clip_by_extent": { type: "raster.clip_by_extent", label: "Clip Raster", description: "Clip to BBox", category: "raster", icon: Scissors, color: "emerald", inputs: 2, outputs: 1, parameters: [
+  "raster.clip_by_extent": { type: "raster.clip_by_extent", label: "Clip Raster", description: "Clip to mask", category: "raster", icon: Scissors, color: "emerald", inputs: ["raster", "mask"], outputs: 1, parameters: [
       { id: "crop", label: "Crop to Cutline", type: "boolean", default: true },
       { id: "nodata", label: "NoData Value", type: "number", default: 0 }
   ] },
-  "raster.statistics": { type: "raster.statistics", label: "Raster Stats", description: "Min/Max/Mean/StdDev", category: "raster", icon: Calculator, color: "emerald", inputs: 1, outputs: 1, parameters: [{ id: "bands", label: "Bands", type: "text", default: "1", placeholder: "e.g. 1,2,3" }] },
-  "raster.hillshade": { type: "raster.hillshade", label: "Hillshade", description: "Terrain hillshade", category: "raster", icon: Layers, color: "emerald", inputs: 1, outputs: 1, parameters: [{ id: "azimuth", label: "Azimuth", type: "number", default: 315, min: 0, max: 360 }, { id: "altitude", label: "Altitude", type: "number", default: 45, min: 0, max: 90 }, { id: "zFactor", label: "Z Factor", type: "number", default: 1.0 }] },
-  "raster.resample": { type: "raster.resample", label: "Resample", description: "Change pixel size", category: "raster", icon: RefreshCcw, color: "emerald", inputs: 1, outputs: 1, mainParameter: "resolution", parameters: [{ id: "resolution", label: "Target Resolution (m)", type: "number", required: true }, { id: "method", label: "Method", type: "select", options: [{ label: "Nearest Neighbor", value: "near" }, { label: "Bilinear", value: "bilinear" }, { label: "Cubic", value: "cubic" }, { label: "Lanczos", value: "lanczos" }] }] },
-  "raster.band_math": { type: "raster.band_math", label: "Band Math", description: "Map algebra", category: "raster", icon: Calculator, color: "emerald", inputs: 2, outputs: 1, mainParameter: "expression", parameters: [{ id: "expression", label: "Algebraic Expression", type: "text", placeholder: "(B1 - B2) / (B1 + B2)", required: true }] },
-  "raster.slope": { type: "raster.slope", label: "Slope", description: "Terrain slope", category: "raster", icon: Layers, color: "emerald", inputs: 1, outputs: 1, parameters: [{ id: "units", label: "Units", type: "select", options: [{ label: "Degrees", value: "degrees" }, { label: "Percent", value: "percent" }] }] },
-  "raster.aspect": { type: "raster.aspect", label: "Aspect", description: "Terrain aspect", category: "raster", icon: Compass, color: "emerald", inputs: 1, outputs: 1, parameters: [] },
+  "raster.statistics": { type: "raster.statistics", label: "Raster Stats", description: "Min/Max/Mean", category: "raster", icon: Calculator, color: "emerald", inputs: ["raster"], outputs: 1, parameters: [{ id: "bands", label: "Bands", type: "text", default: "1" }] },
+  "raster.hillshade": { type: "raster.hillshade", label: "Hillshade", description: "Compute hillshade", category: "raster", icon: Layers, color: "emerald", inputs: ["raster"], outputs: 1, parameters: [{ id: "azimuth", label: "Azimuth", type: "number", default: 315 }, { id: "altitude", label: "Altitude", type: "number", default: 45 }] },
+  "raster.resample": { type: "raster.resample", label: "Resample", description: "Change pixel size", category: "raster", icon: RefreshCcw, color: "emerald", inputs: ["raster"], outputs: 1, mainParameter: "resolution", parameters: [{ id: "resolution", label: "Resolution (m)", type: "number", required: true }] },
+  "raster.band_math": { type: "raster.band_math", label: "Band Math", description: "Map algebra", category: "raster", icon: Calculator, color: "emerald", inputs: ["raster1", "raster2"], outputs: 1, mainParameter: "expression", parameters: [{ id: "expression", label: "Algebraic Expression", type: "text", placeholder: "(B1 - B2) / (B1 + B2)", required: true }] },
+  "raster.slope": { type: "raster.slope", label: "Slope", description: "Terrain slope", category: "raster", icon: Layers, color: "emerald", inputs: ["raster"], outputs: 1, parameters: [{ id: "units", label: "Units", type: "select", options: [{ label: "Degrees", value: "degrees" }, { label: "Percent", value: "percent" }] }] },
+  "raster.aspect": { type: "raster.aspect", label: "Aspect", description: "Terrain aspect", category: "raster", icon: Compass, color: "emerald", inputs: ["raster"], outputs: 1, parameters: [] },
 
   // --- ANALYSIS CATEGORY ---
   "analysis.kernel_density": { type: "analysis.kernel_density", label: "Kernel Density", description: "Heatmap from points", category: "analysis", icon: Play, color: "purple", inputs: 1, outputs: 1, parameters: [{ id: "radius", label: "Search Radius", type: "number", default: 1000 }] },

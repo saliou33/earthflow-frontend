@@ -15,6 +15,8 @@ import {
   ChevronRight,
   X
 } from "lucide-react";
+import maplibregl from 'maplibre-gl';
+import { cogProtocol } from '@geomatico/maplibre-cog-protocol';
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -40,6 +42,16 @@ const MAP_STYLES = [
   { id: "voyager", label: "Voyager", url: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json" },
 ];
 
+// Register COG protocol globally
+if (typeof window !== 'undefined') {
+    try {
+        maplibregl.addProtocol('cog', cogProtocol);
+    } catch (e) {
+        // Handle potential double registration in HMR
+        console.warn("MapLibre COG protocol already registered or failed:", e);
+    }
+}
+
 export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presignedUrl, fullHeight }: SpatialMapPreviewProps) {
     const [geoJson, setGeoJson] = useState<any>(null);
     const [isMaximized, setIsMaximized] = useState(false);
@@ -49,6 +61,7 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
     const [hoverInfo, setHoverInfo] = useState<{ x: number, y: number, longitude: number, latitude: number } | null>(null);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [tileUrlTemplate, setTileUrlTemplate] = useState<string | null>(null);
+    const [tileJsonUrl, setTileJsonUrl] = useState<string | null>(null);
     const [viewState, setViewState] = useState({
         longitude: 0,
         latitude: 0,
@@ -73,20 +86,45 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                 .then(res => {
                     if (res.data.url_template) {
                         setTileUrlTemplate(res.data.url_template);
+                        setTileJsonUrl(res.data.tilejson_url);
                         
-                        // Extract titiler base from template to fetch metadata
-                        const titilerBase = res.data.url_template.split('/tiles/')[0];
-                        const infoUrl = `${titilerBase}/cog/info?url=${asset.storage_uri}`;
+                        // Use TileJSON for better metadata (includes min/max zoom)
+                        const infoUrl = res.data.tilejson_url || res.data.url_template;
                         
                         fetch(infoUrl)
                             .then(r => r.json())
                             .then(info => {
+                                let lon = 0, lat = 0, zoom = 8;
+                                
                                 if (info.center) {
+                                    lon = info.center[0];
+                                    lat = info.center[1];
+                                    zoom = info.center[2] || Math.max(info.minzoom || 2, 14);
+                                } else if (info.bounds) {
+                                    const [minX, minY, maxX, maxY] = info.bounds;
+                                    lon = (minX + maxX) / 2;
+                                    lat = (minY + maxY) / 2;
+                                    
+                                    // Dynamic zoom calculation
+                                    const latDiff = Math.abs(maxY - minY);
+                                    const lonDiff = Math.abs(maxX - minX);
+                                    const maxDiff = Math.max(latDiff, lonDiff);
+                                    if (maxDiff > 0) {
+                                        zoom = Math.min(18, Math.max(2, Math.floor(Math.log2(360 / maxDiff)) - 1));
+                                    }
+                                    
+                                    // Clamp to minzoom if available
+                                    if (info.minzoom !== undefined) {
+                                        zoom = Math.max(zoom, info.minzoom);
+                                    }
+                                }
+
+                                if (lon !== 0 || lat !== 0) {
                                     setViewState(prev => ({
                                         ...prev,
-                                        longitude: info.center[0],
-                                        latitude: info.center[1],
-                                        zoom: Math.max(info.minzoom || 2, 8) // Zoom in to see the data
+                                        longitude: lon,
+                                        latitude: lat,
+                                        zoom: zoom
                                     }));
                                 }
                             })
@@ -97,6 +135,7 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
         } else {
             setGeoJson(null);
             setTileUrlTemplate(null);
+            setTileJsonUrl(null);
         }
     }, [presignedUrl, asset?.asset_type, asset?.id]);
 
@@ -332,12 +371,15 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                     </Source>
                 )}
 
-                {tileUrlTemplate && (
+                {/* RASTER: Using TileJSON as primary, fallback to XYZ template */}
+                {asset?.asset_type === "RASTER" && (tileJsonUrl || tileUrlTemplate) && (
                     <Source 
+                        key={asset.id}
                         id="earthflow-raster-tiles" 
                         type="raster" 
-                        tiles={[tileUrlTemplate]} 
-                        tileSize={256}
+                        url={tileJsonUrl || undefined}
+                        tiles={!tileJsonUrl && tileUrlTemplate ? [tileUrlTemplate] : undefined}
+                        tileSize={512} // TiTiler TileJSON specifies 512
                     >
                         <Layer
                             id="raster-layer"

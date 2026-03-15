@@ -68,6 +68,7 @@ interface WorkflowState {
   deleteNode: (nodeId: string) => void;
   deleteEdge: (edgeId: string) => void;
   duplicateNode: (nodeId: string) => void;
+  clearCanvas: () => void;
 }
 
 export const useWorkflowStore = create<WorkflowState>((set, get) => ({
@@ -116,17 +117,33 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     const nextNodes = applyNodeChanges(changes, get().nodes);
     
     // React Flow's applyNodeChanges only handles node state. 
-    // We need to manually clean up edges if nodes are removed (e.g. via Delete key)
+    // We need to manually clean up edges and selection if nodes are removed (e.g. via Delete key)
     const removedNodeIds = changes
       .filter((c) => c.type === "remove")
       .map((c: any) => c.id);
 
     if (removedNodeIds.length > 0) {
+      const currentSelectedNodeId = get().selectedNodeId;
+      const shouldClearSelectedNode = currentSelectedNodeId && removedNodeIds.includes(currentSelectedNodeId);
+      
+      // Clean up execution results for removed nodes to avoid ghost results
+      const nextExecutionResults = { ...get().executionResults };
+      let resultsChanged = false;
+      for (const id of removedNodeIds) {
+        if (nextExecutionResults[id]) {
+          delete nextExecutionResults[id];
+          resultsChanged = true;
+        }
+      }
+
       set({
         nodes: nextNodes,
         edges: get().edges.filter(
           (edge) => !removedNodeIds.includes(edge.source) && !removedNodeIds.includes(edge.target)
         ),
+        selectedNodeId: shouldClearSelectedNode ? null : currentSelectedNodeId,
+        isPropertiesOpen: shouldClearSelectedNode ? false : get().isPropertiesOpen,
+        executionResults: resultsChanged ? nextExecutionResults : get().executionResults,
       });
     } else {
       set({ nodes: nextNodes });
@@ -134,9 +151,22 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   },
 
   onEdgesChange: (changes) => {
-    set({
-      edges: applyEdgeChanges(changes, get().edges),
-    });
+    const nextEdges = applyEdgeChanges(changes, get().edges);
+    const removedEdgeIds = changes
+      .filter((c) => c.type === "remove")
+      .map((c: any) => c.id);
+
+    if (removedEdgeIds.length > 0) {
+      const currentSelectedEdgeId = get().selectedEdgeId;
+      const shouldClearSelectedEdge = currentSelectedEdgeId && removedEdgeIds.includes(currentSelectedEdgeId);
+      
+      set({
+        edges: nextEdges,
+        selectedEdgeId: shouldClearSelectedEdge ? null : currentSelectedEdgeId,
+      });
+    } else {
+      set({ edges: nextEdges });
+    }
   },
 
   onConnect: (connection: Connection) => {
@@ -204,6 +234,18 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
 
     set({
       nodes: [...get().nodes, newNode],
+    });
+  },
+  clearCanvas: () => {
+    set({
+      nodes: [],
+      edges: [],
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      executionResults: null,
+      lastExecutionAt: null,
+      isPropertiesOpen: false,
+      isDataPanelOpen: false,
     });
   },
 }));

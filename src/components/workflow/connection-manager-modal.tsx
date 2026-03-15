@@ -38,6 +38,16 @@ import {
 import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type ProviderType = "POSTGRES" | "S3" | "DRIVE" | "BIGQUERY";
 
@@ -72,6 +82,7 @@ export const ConnectionManagerModal = memo(function ConnectionManagerModal({ ope
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [search, setSearch] = useState("");
+  const [connectionToDelete, setConnectionToDelete] = useState<string | null>(null);
 
   const { data: connections = [], isLoading } = useQuery<Connection[]>({
     queryKey: ["connections"],
@@ -160,10 +171,10 @@ export const ConnectionManagerModal = memo(function ConnectionManagerModal({ ope
               </div>
               <div>
                 <DialogTitle className="text-2xl font-black tracking-tight uppercase truncate">
-                  {step === "list" ? "External Grid" : (isEditing ? "Reconfigure Node" : "Initialize Link")}
+                  Connections
                 </DialogTitle>
                 <DialogDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                  {step === "list" ? "Manage distributed data connectors" : "Define encrypted credentials for remote access"}
+                  {step === "list" ? "Link external data sources" : "Securely connect your cloud storage"}
                 </DialogDescription>
               </div>
             </div>
@@ -288,11 +299,7 @@ export const ConnectionManagerModal = memo(function ConnectionManagerModal({ ope
                                   size="icon"
                                   className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg"
                                   title="Terminate Link"
-                                  onClick={() => {
-                                    if (confirm("Permanently disconnect this resource?")) {
-                                        deleteMutation.mutate(conn.id);
-                                    }
-                                  }}
+                                  onClick={() => setConnectionToDelete(conn.id)}
                                 >
                                   <Trash2 className="size-3.5" />
                                 </Button>
@@ -405,6 +412,27 @@ export const ConnectionManagerModal = memo(function ConnectionManagerModal({ ope
               </div>
           )}
         </div>
+
+        {/* Alerts & Confirmations */}
+        <AlertDialog open={!!connectionToDelete} onOpenChange={(open) => !open && setConnectionToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Sever Connection?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to disconnect this resource? You will lose access to its datasets in the workflow environment.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Link</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={() => connectionToDelete && deleteMutation.mutate(connectionToDelete)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                        Sever Link
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

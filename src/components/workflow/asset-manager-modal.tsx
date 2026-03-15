@@ -25,6 +25,16 @@ import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Asset {
   id: string;
@@ -50,6 +60,8 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("preview");
+  const [isDeleteAllAlertOpen, setIsDeleteAllAlertOpen] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: assets = [], isLoading, isRefetching, refetch } = useQuery<Asset[]>({
@@ -95,6 +107,19 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
     },
     onError: (error: any) => {
       toast.error(`Update failed: ${error.message || "Unknown error"}`);
+    },
+  });
+
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.delete("v1/assets");
+    },
+    onSuccess: () => {
+      toast.success("Catalog cleared");
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+    },
+    onError: (error: any) => {
+      toast.error(`Purge failed: ${error.message || "Unknown error"}`);
     },
   });
 
@@ -162,10 +187,10 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
                </div>
                <div>
                 <DialogTitle className="text-2xl font-black tracking-tight flex items-center uppercase text-foreground">
-                  Data Lakehouse
+                  Data Manager
                 </DialogTitle>
                 <DialogDescription className="mt-0.5 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                  Multi-modal Spatial refinery
+                  View inputs and processed outputs
                 </DialogDescription>
               </div>
             </div>
@@ -184,6 +209,14 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
                 disabled={isRefetching || isLoading}
               >
                 <RefreshCw className={cn("h-5 w-5", (isRefetching || isLoading) && "animate-spin")} />
+              </Button>
+              <Button 
+                className="h-10 rounded-xl px-4 bg-destructive/10 text-destructive font-bold hover:bg-destructive/20 active:scale-95 transition-all text-xs"
+                onClick={() => setIsDeleteAllAlertOpen(true)}
+                disabled={deleteAllMutation.isPending}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Purge All
               </Button>
               <Button 
                 className="h-10 rounded-xl px-6 bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
@@ -343,11 +376,7 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
                               variant="ghost" 
                               size="icon" 
                               className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => {
-                                if (confirm("Are you sure you want to delete this asset?")) {
-                                  deleteMutation.mutate(asset.id);
-                                }
-                              }}
+                              onClick={() => setAssetToDelete(asset.id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -475,6 +504,47 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
             </Tabs>
           </DialogContent>
         </Dialog>
+
+        {/* Alerts & Confirmations */}
+        <AlertDialog open={isDeleteAllAlertOpen} onOpenChange={setIsDeleteAllAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will permanently delete all assets from the Data Lakehouse. This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Assets</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={() => deleteAllMutation.mutate()}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                        Delete Everything
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={!!assetToDelete} onOpenChange={(open) => !open && setAssetToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Asset</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to delete this asset? The associated file will be removed from object storage.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={() => assetToDelete && deleteMutation.mutate(assetToDelete)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                        Delete Asset
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
