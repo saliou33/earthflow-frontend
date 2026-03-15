@@ -2,7 +2,7 @@
 
 import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand, Database, Globe, Trash2, FileJson, Download, Upload, History, Copy, AlertCircle } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Play, Menu, Settings, LibrarySquare, ZoomIn, ZoomOut, Expand, Database, Globe, Trash2, FileJson, Download, Upload, History, Copy, AlertCircle, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -142,6 +142,7 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
 
   // Local UI state
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+  const [nodeSearchQuery, setNodeSearchQuery] = useState("");
 
   const { data: executionHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ["workflows", workflowId, "executions"],
@@ -670,30 +671,50 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
           isSidebarOpen ? "translate-x-0 opacity-100" : "-translate-x-[120%] opacity-0 pointer-events-none"
         }`}
       >
-        <div className="p-4 border-b">
+        <div className="p-4 border-b space-y-3">
           <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Node Library</h3>
+          <div className="relative">
+             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+             <Input 
+                placeholder="Search nodes..." 
+                className="pl-8 h-8 text-xs bg-muted/40 border-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                value={nodeSearchQuery}
+                onChange={(e) => setNodeSearchQuery(e.target.value)}
+             />
+          </div>
         </div>
         <div className="flex-1 overflow-auto p-2">
           <Accordion type="multiple" defaultValue={NODE_CATEGORIES.map(c => c.id)} className="w-full space-y-2">
-            {NODE_CATEGORIES.map((cat) => (
-              <AccordionItem key={cat.id} value={cat.id} className="border-none">
-                <AccordionTrigger className="px-3 py-2 hover:no-underline hover:bg-muted/50 rounded-lg transition-colors">
-                  <div className="flex items-center text-sm font-semibold">
-                    <cat.icon className={cn("mr-2 h-4 w-4", cat.color)} />
-                    {cat.label}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 px-1 space-y-2">
-                  {Object.values(NODE_REGISTRY)
-                    .filter(node => node.category === cat.id)
-                    .map(node => (
+            {NODE_CATEGORIES.map((cat) => {
+              const filteredNodes = Object.values(NODE_REGISTRY)
+                .filter(node => node.category === cat.id && (
+                    node.label.toLowerCase().includes(nodeSearchQuery.toLowerCase()) ||
+                    node.description.toLowerCase().includes(nodeSearchQuery.toLowerCase())
+                ));
+
+              if (filteredNodes.length === 0) return null;
+
+              return (
+                <AccordionItem key={cat.id} value={cat.id} className="border-none">
+                  <AccordionTrigger className="px-3 py-2 hover:no-underline hover:bg-muted/50 rounded-lg transition-colors">
+                    <div className="flex items-center text-sm font-semibold">
+                      <cat.icon className={cn("mr-2 h-4 w-4", cat.color)} />
+                      {cat.label}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 px-1 space-y-2">
+                    {filteredNodes.map(node => (
                       <div 
                         key={node.type}
                         className={cn(
                           "group flex items-center p-3 border rounded-xl bg-card transition-all cursor-grab active:cursor-grabbing shadow-sm",
                           node.color === "blue" ? "hover:border-blue-500/50 hover:bg-blue-500/5" :
                           node.color === "orange" ? "hover:border-orange-500/50 hover:bg-orange-500/5" :
-                          "hover:border-purple-500/50 hover:bg-purple-500/5"
+                          node.color === "purple" ? "hover:border-purple-500/50 hover:bg-purple-500/5" :
+                          node.color === "emerald" ? "hover:border-emerald-500/50 hover:bg-emerald-500/5" :
+                          node.color === "amber" ? "hover:border-amber-500/50 hover:bg-amber-500/5" :
+                          node.color === "pink" ? "hover:border-pink-500/50 hover:bg-pink-500/5" :
+                          "hover:border-primary/50 hover:bg-primary/5"
                         )}
                         onDragStart={(e) => onDragStart(e, node.type)}
                         draggable
@@ -702,13 +723,21 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                           "h-8 w-8 rounded-lg flex items-center justify-center mr-3 transition-colors",
                           node.color === "blue" ? "bg-blue-500/10 group-hover:bg-blue-500/20" :
                           node.color === "orange" ? "bg-orange-500/10 group-hover:bg-orange-500/20" :
-                          "bg-purple-500/10 group-hover:bg-purple-500/20"
+                          node.color === "purple" ? "bg-purple-500/10 group-hover:bg-purple-500/20" :
+                          node.color === "emerald" ? "bg-emerald-500/10 group-hover:bg-emerald-500/20" :
+                          node.color === "amber" ? "bg-amber-500/10 group-hover:bg-amber-500/20" :
+                          node.color === "pink" ? "bg-pink-500/10 group-hover:bg-pink-500/20" :
+                          "bg-primary/10 group-hover:bg-primary/20"
                         )}>
                           <node.icon className={cn(
                             "h-4 w-4",
                             node.color === "blue" ? "text-blue-500" :
                             node.color === "orange" ? "text-orange-500" :
-                            "text-purple-500"
+                            node.color === "purple" ? "text-purple-500" :
+                            node.color === "emerald" ? "text-emerald-500" :
+                            node.color === "amber" ? "text-amber-500" :
+                            node.color === "pink" ? "text-pink-500" :
+                            "text-primary"
                           )} />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -719,9 +748,10 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
                         </div>
                       </div>
                     ))}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
           </Accordion>
         </div>
       </div>

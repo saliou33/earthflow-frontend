@@ -93,8 +93,7 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
                 ...prev,
                 longitude: lon,
                 latitude: lat,
-                zoom: Math.max(prev.zoom, 10),
-                transitionDuration: 500
+                zoom: Math.max(prev.zoom, 10)
             }));
         }
     }, [geoJson]);

@@ -468,8 +468,7 @@ export function MapInput({ value, onChange }: MapInputProps) {
               ...viewState,
               longitude: lon,
               latitude: lat,
-              zoom: Math.max(viewState.zoom, 10),
-              transitionDuration: 500
+              zoom: Math.max(viewState.zoom, 10)
           });
       }
       setContextMenu(null);

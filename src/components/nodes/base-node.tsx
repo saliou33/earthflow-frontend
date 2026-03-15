@@ -32,13 +32,28 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
     blue: "border-blue-500 bg-blue-500/10 text-blue-500",
     orange: "border-orange-500 bg-orange-500/10 text-orange-500",
     purple: "border-purple-500 bg-purple-500/10 text-purple-500",
+    emerald: "border-emerald-500 bg-emerald-500/10 text-emerald-500",
+    amber: "border-amber-500 bg-amber-500/10 text-amber-500",
+    pink: "border-pink-500 bg-pink-500/10 text-pink-500",
   }[definition.color] || "border-primary bg-primary/10 text-primary";
 
   const borderColor = {
     blue: "border-blue-500",
     orange: "border-orange-500",
     purple: "border-purple-500",
+    emerald: "border-emerald-500",
+    amber: "border-amber-500",
+    pink: "border-pink-500",
   }[definition.color] || "border-primary";
+
+  const handleColor = {
+    blue: "bg-blue-500",
+    orange: "bg-orange-500",
+    purple: "bg-purple-500",
+    emerald: "bg-emerald-500",
+    amber: "bg-amber-500",
+    pink: "bg-pink-500",
+  }[definition.color] || "bg-primary";
 
   // Determine the display label dynamically
   const displayLabel = useMemo(() => {
@@ -86,7 +101,7 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
           position={Position.Left}
           id="input"
           style={{ top: '50%' }}
-          className={cn("w-3 h-3 border-2 border-background", borderColor.replace('border-', 'bg-'))}
+          className={cn("w-3 h-3 border-2 border-background", handleColor)}
         />
       )}
 
@@ -110,7 +125,7 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
           position={Position.Right}
           id="output"
           style={{ top: '50%' }}
-          className={cn("w-3 h-3 border-2 border-background", borderColor.replace('border-', 'bg-'))}
+          className={cn("w-3 h-3 border-2 border-background", handleColor)}
         />
       )}
     </div>
