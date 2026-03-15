@@ -17,7 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Upload, FileType, Search, Database, Trash2, Loader2, RefreshCw, Filter, Clock, BarChart3, Pencil } from "lucide-react";
+import { Upload, FileType, Search, Database, Trash2, Loader2, RefreshCw, Filter, Clock, BarChart3, Pencil, Eye, Layout, X } from "lucide-react";
+import { SpatialMapPreview } from "../data/spatial-map";
+import { DataTablePreview } from "../data/data-table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -44,6 +47,8 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: assets = [], isLoading, isRefetching, refetch } = useQuery<Asset[]>({
@@ -104,6 +109,16 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
       toast.error(`Failed to delete asset: ${error.message || "Unknown error"}`);
     },
   });
+
+  const handleViewAsset = async (asset: Asset) => {
+    try {
+      const res = await apiClient.get(`v1/assets/${asset.id}/url`);
+      setPreviewUrl(res.data.url);
+      setPreviewAsset(asset);
+    } catch (err: any) {
+      toast.error(`Failed to get preview URL: ${err.message || "Unknown error"}`);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -312,6 +327,14 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
                             <Button 
                               variant="ghost" 
                               size="icon" 
+                              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              onClick={() => handleViewAsset(asset)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
                               className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                               onClick={() => {
                                 if (confirm("Are you sure you want to delete this asset?")) {
@@ -376,6 +399,65 @@ export const AssetManagerModal = memo(function AssetManagerModal({ open, onOpenC
                     </Button>
                 </div>
             </DialogContent>
+        </Dialog>
+
+        {/* Fullscreen Preview Overlay */}
+        <Dialog open={!!previewAsset} onOpenChange={(open) => !open && setPreviewAsset(null)}>
+          <DialogContent className="max-w-[98vw]! sm:max-w-[98vw]! w-[98vw]! h-[96vh]! p-0! flex! flex-col! bg-background/95 backdrop-blur-xl border-primary/20 shadow-2xl overflow-hidden rounded-3xl">
+            <DialogHeader className="px-8 py-6 border-b shrink-0 bg-muted/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
+                    <Layout className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-2xl font-black tracking-tight uppercase flex items-center gap-3">
+                      Asset Inspection 
+                      <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full border border-primary/10 tracking-widest font-black italic">
+                        {previewAsset?.asset_type}
+                      </span>
+                    </DialogTitle>
+                    <DialogDescription className="font-bold text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                      {previewAsset?.name} • {previewAsset?.storage_uri}
+                    </DialogDescription>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="size-10 rounded-xl hover:bg-destructive/10 hover:text-destructive group"
+                  onClick={() => setPreviewAsset(null)}
+                >
+                  <X className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                </Button>
+              </div>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-hidden p-8">
+              <Tabs defaultValue="preview" className="h-full flex flex-col gap-6">
+                <TabsList className="w-max bg-muted/40 p-1.5 rounded-2xl border border-primary/10 h-12 shadow-inner">
+                  <TabsTrigger value="preview" className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg font-bold tracking-tight">
+                    Spatial Preview
+                  </TabsTrigger>
+                  {previewAsset?.asset_type === "VECTOR" && (
+                    <TabsTrigger value="data" className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg font-bold tracking-tight">
+                      Attribute Table
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+                <div className="flex-1 rounded-3xl border-2 border-primary/10 overflow-hidden shadow-2xl relative bg-black/5 p-4">
+                    <TabsContent value="preview" className="m-0 h-full w-full">
+                       <SpatialMapPreview asset={previewAsset} presignedUrl={previewUrl} />
+                    </TabsContent>
+                    {previewAsset?.asset_type === "VECTOR" && (
+                    <TabsContent value="data" className="m-0 h-full w-full overflow-auto">
+                        <DataTablePreview asset={previewAsset} presignedUrl={previewUrl} />
+                    </TabsContent>
+                    )}
+                </div>
+              </Tabs>
+            </div>
+          </DialogContent>
         </Dialog>
       </DialogContent>
     </Dialog>
