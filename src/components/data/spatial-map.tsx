@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { apiClient } from "@/lib/api";
 
 interface SpatialMapPreviewProps {
   asset?: any;
@@ -67,11 +68,10 @@ export const SpatialMapPreview = memo(function SpatialMapPreview({ asset, presig
             // Clear vector data
             setGeoJson(null);
             // Fetch the tiling endpoint
-            fetch(`${process.env.NEXT_PUBLIC_API_URL || "/api"}/v1/assets/${asset.id}/tile-url`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.url_template) {
-                        setTileUrlTemplate(data.url_template);
+            apiClient.get(`v1/assets/${asset.id}/tile-url`)
+                .then(res => {
+                    if (res.data.url_template) {
+                        setTileUrlTemplate(res.data.url_template);
                     }
                 })
                 .catch(err => console.error("Failed to fetch tile-url:", err));
