@@ -162,13 +162,23 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
     category: "geometry",
     icon: Combine,
     color: "orange",
-    inputs: ["layer_a", "layer_b"],
+    inputs: 2,
     outputs: ["output"],
     parameters: [
       { id: "gridSize", label: "Grid Size", type: "number", default: 0, description: "Precision grid size" }
     ]
   },
-  "vector.reproject": { type: "vector.reproject", label: "Reproject", description: "Change CRS", category: "geometry", icon: RefreshCcw, color: "orange", inputs: ["input"], outputs: ["output"], parameters: [{ id: "target_crs", label: "Target EPSG", type: "text", default: "4326" }] },
+  "vector.reproject": { 
+    type: "vector.reproject", 
+    label: "Reproject", 
+    description: "Change CRS", 
+    category: "geometry", 
+    icon: RefreshCcw, 
+    color: "orange", 
+    inputs: ["input"], 
+    outputs: ["output"], 
+    parameters: [{ id: "target_crs", label: "Target EPSG", type: "text", default: "4326" }] 
+  },
 
   // --- RASTER CATEGORY ---
   "raster.clip_by_extent": { type: "raster.clip_by_extent", label: "Clip Raster", description: "Clip to mask", category: "raster", icon: Scissors, color: "emerald", inputs: ["raster", "mask"], outputs: ["output"], parameters: [
