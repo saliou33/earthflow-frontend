@@ -162,35 +162,35 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
     category: "geometry",
     icon: Combine,
     color: "orange",
-    inputs: 2,
-    outputs: 1,
+    inputs: ["layer_a", "layer_b"],
+    outputs: ["output"],
     parameters: [
       { id: "gridSize", label: "Grid Size", type: "number", default: 0, description: "Precision grid size" }
     ]
   },
-  "vector.reproject": { type: "vector.reproject", label: "Reproject", description: "Change CRS", category: "geometry", icon: RefreshCcw, color: "orange", inputs: 1, outputs: 1, parameters: [{ id: "target_crs", label: "Target EPSG", type: "text", default: "4326" }] },
+  "vector.reproject": { type: "vector.reproject", label: "Reproject", description: "Change CRS", category: "geometry", icon: RefreshCcw, color: "orange", inputs: ["input"], outputs: ["output"], parameters: [{ id: "target_crs", label: "Target EPSG", type: "text", default: "4326" }] },
 
   // --- RASTER CATEGORY ---
-  "raster.clip_by_extent": { type: "raster.clip_by_extent", label: "Clip Raster", description: "Clip to mask", category: "raster", icon: Scissors, color: "emerald", inputs: ["raster", "mask"], outputs: 1, parameters: [
+  "raster.clip_by_extent": { type: "raster.clip_by_extent", label: "Clip Raster", description: "Clip to mask", category: "raster", icon: Scissors, color: "emerald", inputs: ["raster", "mask"], outputs: ["output"], parameters: [
       { id: "crop", label: "Crop to Cutline", type: "boolean", default: true },
       { id: "nodata", label: "NoData Value", type: "number", default: 0 }
   ] },
-  "raster.statistics": { type: "raster.statistics", label: "Raster Stats", description: "Min/Max/Mean", category: "raster", icon: Calculator, color: "emerald", inputs: ["raster"], outputs: 1, parameters: [{ id: "bands", label: "Bands", type: "text", default: "1" }] },
-  "raster.hillshade": { type: "raster.hillshade", label: "Hillshade", description: "Compute hillshade", category: "raster", icon: Layers, color: "emerald", inputs: ["raster"], outputs: 1, parameters: [{ id: "azimuth", label: "Azimuth", type: "number", default: 315 }, { id: "altitude", label: "Altitude", type: "number", default: 45 }] },
-  "raster.resample": { type: "raster.resample", label: "Resample", description: "Change pixel size", category: "raster", icon: RefreshCcw, color: "emerald", inputs: ["raster"], outputs: 1, mainParameter: "resolution", parameters: [{ id: "resolution", label: "Resolution (m)", type: "number", required: true }] },
-  "raster.band_math": { type: "raster.band_math", label: "Band Math", description: "Map algebra", category: "raster", icon: Calculator, color: "emerald", inputs: ["raster1", "raster2"], outputs: 1, mainParameter: "expression", parameters: [{ id: "expression", label: "Algebraic Expression", type: "text", placeholder: "(B1 - B2) / (B1 + B2)", required: true }] },
-  "raster.slope": { type: "raster.slope", label: "Slope", description: "Terrain slope", category: "raster", icon: Layers, color: "emerald", inputs: ["raster"], outputs: 1, parameters: [{ id: "units", label: "Units", type: "select", options: [{ label: "Degrees", value: "degrees" }, { label: "Percent", value: "percent" }] }] },
-  "raster.aspect": { type: "raster.aspect", label: "Aspect", description: "Terrain aspect", category: "raster", icon: Compass, color: "emerald", inputs: ["raster"], outputs: 1, parameters: [] },
+  "raster.statistics": { type: "raster.statistics", label: "Raster Stats", description: "Min/Max/Mean", category: "raster", icon: Calculator, color: "emerald", inputs: ["raster"], outputs: ["output"], parameters: [{ id: "bands", label: "Bands", type: "text", default: "1" }] },
+  "raster.hillshade": { type: "raster.hillshade", label: "Hillshade", description: "Compute hillshade", category: "raster", icon: Layers, color: "emerald", inputs: ["raster"], outputs: ["output"], parameters: [{ id: "azimuth", label: "Azimuth", type: "number", default: 315 }, { id: "altitude", label: "Altitude", type: "number", default: 45 }] },
+  "raster.resample": { type: "raster.resample", label: "Resample", description: "Change pixel size", category: "raster", icon: RefreshCcw, color: "emerald", inputs: ["raster"], outputs: ["output"], mainParameter: "resolution", parameters: [{ id: "resolution", label: "Resolution (m)", type: "number", required: true }] },
+  "raster.band_math": { type: "raster.band_math", label: "Band Math", description: "Map algebra", category: "raster", icon: Calculator, color: "emerald", inputs: ["raster1", "raster2"], outputs: ["output"], mainParameter: "expression", parameters: [{ id: "expression", label: "Algebraic Expression", type: "text", placeholder: "(B1 - B2) / (B1 + B2)", required: true }] },
+  "raster.slope": { type: "raster.slope", label: "Slope", description: "Terrain slope", category: "raster", icon: Layers, color: "emerald", inputs: ["raster"], outputs: ["output"], parameters: [{ id: "units", label: "Units", type: "select", options: [{ label: "Degrees", value: "degrees" }, { label: "Percent", value: "percent" }] }] },
+  "raster.aspect": { type: "raster.aspect", label: "Aspect", description: "Terrain aspect", category: "raster", icon: Compass, color: "emerald", inputs: ["raster"], outputs: ["output"], parameters: [] },
 
   // --- ANALYSIS CATEGORY ---
-  "analysis.kernel_density": { type: "analysis.kernel_density", label: "Kernel Density", description: "Heatmap from points", category: "analysis", icon: Play, color: "purple", inputs: 1, outputs: 1, parameters: [{ id: "radius", label: "Search Radius", type: "number", default: 1000 }] },
-  "analysis.viewshed": { type: "analysis.viewshed", label: "Viewshed", description: "Visibility analysis", category: "analysis", icon: Play, color: "purple", inputs: 2, outputs: 1, parameters: [{ id: "observer_height", label: "Observer Height", type: "number", default: 1.7 }] },
-  "analysis.watershed": { type: "analysis.watershed", label: "Watershed", description: "Hydrology basins", category: "analysis", icon: Play, color: "purple", inputs: 1, outputs: 1, parameters: [{ id: "threshold", label: "Threshold", type: "number" }] },
-  "analysis.voronoi": { type: "analysis.voronoi", label: "Voronoi", description: "Thiessen polygons", category: "analysis", icon: Play, color: "purple", inputs: 1, outputs: 1, parameters: [{ id: "envelope", label: "Clip to Extent", type: "boolean", default: true }] },
-  "analysis.cluster": { type: "analysis.cluster", label: "Cluster", description: "Point clustering (DBSCAN)", category: "analysis", icon: Zap, color: "purple", inputs: 1, outputs: 1, parameters: [{ id: "distance", label: "Max Distance (m)", type: "number", default: 500 }, { id: "min_points", label: "Min Points", type: "number", default: 5 }] },
+  "analysis.kernel_density": { type: "analysis.kernel_density", label: "Kernel Density", description: "Heatmap from points", category: "analysis", icon: Play, color: "purple", inputs: ["input"], outputs: ["output"], parameters: [{ id: "radius", label: "Search Radius", type: "number", default: 1000 }] },
+  "analysis.viewshed": { type: "analysis.viewshed", label: "Viewshed", description: "Visibility analysis", category: "analysis", icon: Play, color: "purple", inputs: ["dem", "observer"], outputs: ["output"], parameters: [{ id: "observer_height", label: "Observer Height", type: "number", default: 1.7 }] },
+  "analysis.watershed": { type: "analysis.watershed", label: "Watershed", description: "Hydrology basins", category: "analysis", icon: Play, color: "purple", inputs: ["input"], outputs: ["output"], parameters: [{ id: "threshold", label: "Threshold", type: "number" }] },
+  "analysis.voronoi": { type: "analysis.voronoi", label: "Voronoi", description: "Thiessen polygons", category: "analysis", icon: Play, color: "purple", inputs: ["input"], outputs: ["output"], parameters: [{ id: "envelope", label: "Clip to Extent", type: "boolean", default: true }] },
+  "analysis.cluster": { type: "analysis.cluster", label: "Cluster", description: "Point clustering (DBSCAN)", category: "analysis", icon: Zap, color: "purple", inputs: ["input"], outputs: ["output"], parameters: [{ id: "distance", label: "Max Distance (m)", type: "number", default: 500 }, { id: "min_points", label: "Min Points", type: "number", default: 5 }] },
 
   // --- TABLE CATEGORY ---
-  "table.join": { type: "table.join", label: "Join", description: "Join two tables", category: "table", icon: TableIcon, color: "amber", inputs: 2, outputs: 1, parameters: [
+  "table.join": { type: "table.join", label: "Join", description: "Join two tables", category: "table", icon: TableIcon, color: "amber", inputs: ["left", "right"], outputs: ["output"], parameters: [
       { id: "method", label: "Join Type", type: "select", options: [{ label: "Inner Join", value: "inner" }, { label: "Left Join", value: "left" }, { label: "Right Join", value: "right" }, { label: "Outer Join", value: "outer" }], default: "inner" },
       { id: "left_key", label: "Left Table Key", type: "text", required: true }, 
       { id: "right_key", label: "Right Table Key", type: "text", required: true }

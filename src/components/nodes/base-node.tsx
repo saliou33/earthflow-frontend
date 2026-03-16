@@ -94,36 +94,6 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
           <AlertCircle className="size-3 text-white animate-pulse" />
         </div>
       )}
-      {/* Target Handles */}
-      {(() => {
-        if (!definition.inputs) return null;
-        const inputs = Array.isArray(definition.inputs) 
-          ? definition.inputs 
-          : Array.from({ length: definition.inputs }, (_, i) => i === 0 ? "input" : String(i));
-
-        return inputs.map((inputId, index) => {
-          const top = inputs.length === 1 ? "50%" : `${20 + (index * 60) / (inputs.length - 1)}%`;
-          return (
-            <div key={inputId} className="group/handle">
-              <Handle
-                type="target"
-                position={Position.Left}
-                id={inputId}
-                style={{ top }}
-                className={cn("w-3 h-3 border-2 border-background", handleColor)}
-              />
-              {inputs.length > 1 && (
-                <div 
-                  className="absolute left-4 text-[8px] font-black uppercase text-muted-foreground/40 tracking-tighter"
-                  style={{ top, transform: 'translateY(-50%)' }}
-                >
-                  {inputId}
-                </div>
-              )}
-            </div>
-          );
-        });
-      })()}
 
       <div className={cn("p-2 flex items-center justify-between border-b border-current/20 rounded-t-[10px]", colorClass)}>
         <div className="flex items-center space-x-2">
@@ -138,7 +108,32 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
         </span>
       </div>
 
-      {/* Source Handles */}
+      {/* Handles rendered last so they are visually on top */}
+      {/* Target Handles (Inputs) */}
+      {(() => {
+        if (!definition.inputs) return null;
+        const inputs = Array.isArray(definition.inputs) 
+          ? definition.inputs 
+          : Array.from({ length: definition.inputs }, (_, i) => i === 0 ? "input" : String(i));
+
+        return inputs.map((inputId, index) => {
+          const top = inputs.length === 1 ? "50%" : `${20 + (index * 60) / (inputs.length - 1)}%`;
+          return (
+            <div key={inputId} className="group/handle z-50">
+              <Handle
+                type="target"
+                position={Position.Left}
+                id={inputId}
+                style={{ top }}
+                className={cn("w-3 h-3 border-2 border-background", handleColor)}
+              />
+              {/* Handlers with labels removed per user request */}
+            </div>
+          );
+        });
+      })()}
+
+      {/* Source Handles (Outputs) */}
       {(() => {
         if (!definition.outputs) return null;
         const outputs = Array.isArray(definition.outputs) 
@@ -148,7 +143,7 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
         return outputs.map((outputId, index) => {
           const top = outputs.length === 1 ? "50%" : `${20 + (index * 60) / (outputs.length - 1)}%`;
           return (
-            <div key={outputId} className="group/handle">
+            <div key={outputId} className="group/handle z-50">
               <Handle
                 type="source"
                 position={Position.Right}
@@ -156,14 +151,6 @@ export function BaseNode({ id, data, type, selected }: BaseNodeProps) {
                 style={{ top }}
                 className={cn("w-3 h-3 border-2 border-background", handleColor)}
               />
-              {outputs.length > 1 && (
-                <div 
-                  className="absolute right-4 text-[8px] font-black uppercase text-muted-foreground/40 tracking-tighter"
-                  style={{ top, transform: 'translateY(-50%)' }}
-                >
-                  {outputId}
-                </div>
-              )}
             </div>
           );
         });
