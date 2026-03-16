@@ -28,7 +28,6 @@ import { DataPanel } from "@/components/workflow/data-panel";
 import { AssetManagerModal } from "@/components/workflow/asset-manager-modal";
 import { ConnectionManagerModal } from "@/components/workflow/connection-manager-modal";
 import { NODE_REGISTRY, NODE_CATEGORIES } from "@/lib/workflow-registry";
-import { DEMO_WORKFLOW_ID, DEMO_WORKFLOW_DATA } from "@/lib/demo-data";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,15 +179,9 @@ export function WorkflowEditorClientPage({ workflowId }: { workflowId: string })
 
   useEffect(() => {
     if (workflow && !isInitialized.current) {
-      if (workflowId === DEMO_WORKFLOW_ID) {
-        setNodes(DEMO_WORKFLOW_DATA.graph.nodes);
-        setEdges(DEMO_WORKFLOW_DATA.graph.edges);
-        setWorkflowName(DEMO_WORKFLOW_DATA.name);
-      } else {
-        setNodes(workflow.graph.nodes || []);
-        setEdges(workflow.graph.edges || []);
-        setWorkflowName(workflow.name);
-      }
+      setNodes(workflow.graph.nodes || []);
+      setEdges(workflow.graph.edges || []);
+      setWorkflowName(workflow.name);
       isInitialized.current = true;
     }
   }, [workflow, workflowId, setNodes, setEdges, setWorkflowName]);
